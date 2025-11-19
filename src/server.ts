@@ -47,11 +47,17 @@ const WISE_API_URL = process.env.WISE_API_URL || 'https://api.sandbox.transferwi
 // Transfer corridors (same as Claude implementation)
 const TRANSFER_CORRIDORS: Record<string, any> = {
   'mexico': { country: 'Mexico', currency: 'MXN', deliveryTime: '1-2 business days' },
+  'méxico': { country: 'Mexico', currency: 'MXN', deliveryTime: '1-2 business days' },
   'colombia': { country: 'Colombia', currency: 'COP', deliveryTime: '1-3 business days' },
   'brazil': { country: 'Brazil', currency: 'BRL', deliveryTime: '1-3 business days' },
+  'brasil': { country: 'Brazil', currency: 'BRL', deliveryTime: '1-3 business days' },
+  'argentina': { country: 'Argentina', currency: 'ARS', deliveryTime: '1-3 business days' },
+  'chile': { country: 'Chile', currency: 'CLP', deliveryTime: '1-3 business days' },
   'uk': { country: 'United Kingdom', currency: 'GBP', deliveryTime: 'Same day' },
   'united kingdom': { country: 'United Kingdom', currency: 'GBP', deliveryTime: 'Same day' },
-  'europe': { country: 'Europe', currency: 'EUR', deliveryTime: '1 business day' }
+  'reino unido': { country: 'United Kingdom', currency: 'GBP', deliveryTime: 'Same day' },
+  'europe': { country: 'Europe', currency: 'EUR', deliveryTime: '1 business day' },
+  'europa': { country: 'Europe', currency: 'EUR', deliveryTime: '1 business day' }
 };
 
 // Exchange rates (demo/fallback)
@@ -59,11 +65,19 @@ const EXCHANGE_RATES: Record<string, number> = {
   'MXN': 17.2,
   'COP': 3750,
   'BRL': 5.1,
+  'ARS': 350,
+  'CLP': 820,
   'GBP': 0.79,
   'EUR': 0.92
 };
 
 // Session management (in-memory for MVP)
+interface ConversationMessage {
+  role: 'user' | 'bot';
+  text: string;
+  timestamp: Date;
+}
+
 interface UserSession {
   step: 'idle' | 'collecting_amount' | 'collecting_country' | 'collecting_recipient' | 'collecting_bank_details' | 'confirming';
   amount?: number;
@@ -73,6 +87,7 @@ interface UserSession {
   bankDetails?: Record<string, any>;
   lastActivity: Date;
   language?: Language; // Detected user language (es/en)
+  conversationHistory: ConversationMessage[]; // Last 5 messages
 }
 
 const sessions = new Map<string, UserSession>();
@@ -103,11 +118,16 @@ function checkRateLimit(phoneNumber: string): boolean {
 
 function getSession(phoneNumber: string): UserSession {
   if (!sessions.has(phoneNumber)) {
-    sessions.set(phoneNumber, { step: 'idle', lastActivity: new Date() });
+    sessions.set(phoneNumber, { step: 'idle', lastActivity: new Date(), conversationHistory: [] });
   }
 
   const session = sessions.get(phoneNumber)!;
   const now = new Date();
+
+  // Ensure conversationHistory exists (for backwards compatibility)
+  if (!session.conversationHistory) {
+    session.conversationHistory = [];
+  }
 
   // Reset session if inactive for too long
   if (now.getTime() - session.lastActivity.getTime() > SESSION_TIMEOUT_MS) {
@@ -122,6 +142,44 @@ function getSession(phoneNumber: string): UserSession {
 
   session.lastActivity = now;
   return session;
+}
+
+// Conversation history helpers
+function addToConversationHistory(session: UserSession, role: 'user' | 'bot', text: string) {
+  session.conversationHistory.push({
+    role,
+    text,
+    timestamp: new Date()
+  });
+
+  // Keep only last 5 messages
+  if (session.conversationHistory.length > 5) {
+    session.conversationHistory.shift();
+  }
+}
+
+function getConversationContext(session: UserSession): string {
+  return session.conversationHistory
+    .map(msg => `${msg.role === 'user' ? 'User' : 'Bot'}: ${msg.text}`)
+    .join('\n');
+}
+
+// Context-aware extraction: Check recent messages for missing info
+function extractFromContext(session: UserSession, field: 'amount' | 'country'): any {
+  // Look at recent user messages for the missing field
+  const recentMessages = session.conversationHistory
+    .filter(msg => msg.role === 'user')
+    .slice(-3) // Last 3 user messages
+    .map(msg => msg.text)
+    .join(' ');
+
+  if (field === 'amount' && !session.amount) {
+    return extractAmount(recentMessages);
+  } else if (field === 'country' && !session.country) {
+    return extractCountry(recentMessages);
+  }
+
+  return null;
 }
 
 // Cleanup old sessions periodically to prevent memory leak
@@ -155,10 +213,15 @@ if (MODE === 'PRODUCTION' && WISE_API_KEY && WISE_PROFILE_ID) {
 }
 
 // WhatsApp Cloud API helper
-async function sendWhatsAppMessage(to: string, message: string) {
+async function sendWhatsAppMessage(to: string, message: string, session?: UserSession) {
   if (!WHATSAPP_TOKEN || !PHONE_NUMBER_ID) {
     console.log('⚠️  WhatsApp credentials missing. Message:', message);
     return;
+  }
+
+  // Track bot response in conversation history
+  if (session) {
+    addToConversationHistory(session, 'bot', message);
   }
 
   const url = `https://graph.facebook.com/v18.0/${PHONE_NUMBER_ID}/messages`;
@@ -184,8 +247,9 @@ async function sendWhatsAppMessage(to: string, message: string) {
 function extractAmount(text: string): number | null {
   const patterns = [
     /\$\s*(\d+(?:\.\d{2})?)/,  // $100 or $100.00
-    /(\d+(?:\.\d{2})?)\s*(?:dollars|usd|USD)/i,  // 100 dollars
-    /send\s+(\d+)/i  // send 100
+    /(\d+(?:\.\d{2})?)\s*(?:dollars|usd|USD|dólares|dolares)/i,  // 100 dollars
+    /(?:send|enviar|transferir|mandar)\s+\$?(\d+(?:\.\d{2})?)/i,  // send/enviar 100
+    /\$?(\d+(?:\.\d{2})?)\s+(?:to|a|para)\s+/i  // 100 to Colombia / 100 a Colombia
   ];
 
   for (const pattern of patterns) {
@@ -230,6 +294,9 @@ async function handleIncomingMessage(from: string, text: string) {
 
   const session = getSession(from);
   const lowerText = text.toLowerCase();
+
+  // Track user message in conversation history
+  addToConversationHistory(session, 'user', text);
 
   // Detect language if not set
   if (!session.language) {
@@ -356,7 +423,7 @@ async function handleIdleState(from: string, text: string, session: UserSession)
         );
       }
     } else {
-      await sendWhatsAppMessage(from, '🌎 Which country? (Mexico, Colombia, Brazil, UK, or Europe)');
+      await sendWhatsAppMessage(from, '🌎 Which country? (Mexico, Colombia, Brazil, Argentina, Chile, UK, or Europe)');
     }
     return;
   }
@@ -391,6 +458,8 @@ async function handleIdleState(from: string, text: string, session: UserSession)
           `• México 🇲🇽\n` +
           `• Colombia 🇨🇴\n` +
           `• Brasil 🇧🇷\n` +
+          `• Argentina 🇦🇷\n` +
+          `• Chile 🇨🇱\n` +
           `• Reino Unido 🇬🇧\n` +
           `• Europa 🇪🇺`
         : `✅ Sending *$${amount} USD*\n\n` +
@@ -398,6 +467,8 @@ async function handleIdleState(from: string, text: string, session: UserSession)
           `• Mexico 🇲🇽\n` +
           `• Colombia 🇨🇴\n` +
           `• Brazil 🇧🇷\n` +
+          `• Argentina 🇦🇷\n` +
+          `• Chile 🇨🇱\n` +
           `• United Kingdom 🇬🇧\n` +
           `• Europe 🇪🇺`;
       await sendWhatsAppMessage(from, message);
@@ -443,14 +514,18 @@ async function handleCollectingAmount(from: string, text: string, session: UserS
   if (amount && amount >= 1 && amount <= 10000) {
     session.amount = amount;
     session.step = 'collecting_country';
+    const isSpanish = session.language === 'es';
     await sendWhatsAppMessage(from,
-      `✅ Sending *$${amount} USD*\n\n` +
-      `🌎 Which country?\n` +
-      `• Mexico\n` +
-      `• Colombia\n` +
-      `• Brazil\n` +
-      `• United Kingdom\n` +
-      `• Europe`
+      `✅ ${isSpanish ? 'Enviando' : 'Sending'} *$${amount} USD*\n\n` +
+      `🌎 ${isSpanish ? '¿A qué país?' : 'Which country?'}\n` +
+      `• Mexico / México 🇲🇽\n` +
+      `• Colombia 🇨🇴\n` +
+      `• Brazil / Brasil 🇧🇷\n` +
+      `• Argentina 🇦🇷\n` +
+      `• Chile 🇨🇱\n` +
+      `• United Kingdom / Reino Unido 🇬🇧\n` +
+      `• Europe / Europa 🇪🇺`,
+      session
     );
   } else {
     await sendWhatsAppMessage(from, '❌ Please enter a valid amount between $1 and $10,000\n\nExample: "$100" or "100"');
@@ -458,7 +533,13 @@ async function handleCollectingAmount(from: string, text: string, session: UserS
 }
 
 async function handleCollectingCountry(from: string, text: string, session: UserSession) {
-  const country = extractCountry(text);
+  let country = extractCountry(text);
+
+  // Try extracting from conversation context if not found
+  if (!country) {
+    country = extractFromContext(session, 'country');
+  }
+
   if (country) {
     session.country = country;
     const corridor = Object.values(TRANSFER_CORRIDORS).find((c: any) => c.country === country);
@@ -638,7 +719,11 @@ async function handleConfirmation(from: string, text: string, session: UserSessi
             break;
           case 'BRL':
             recipientBankAccount = details.accountNumber || '';
-            recipientBankCode = details.cpf || '';
+            extraFields = {
+              cpf: details.cpf,
+              accountType: details.accountType || 'checking',
+              bankCode: details.bankCode || '001'
+            };
             break;
           case 'EUR':
             recipientBankAccount = details.iban || '';
@@ -652,6 +737,23 @@ async function handleConfirmation(from: string, text: string, session: UserSessi
               address: details.address,
               city: details.city,
               postCode: details.postCode
+            };
+            break;
+          case 'ARS':
+            recipientBankAccount = details.accountNumber || '';
+            extraFields = {
+              accountType: details.accountType || 'SAVINGS',
+              phoneNumber: details.phoneNumber,
+              idDocumentNumber: details.idDocumentNumber,
+              city: details.city
+            };
+            break;
+          case 'CLP':
+            recipientBankAccount = details.accountNumber || '';
+            extraFields = {
+              accountType: details.accountType || 'CHECKING',
+              bankCode: details.bankCode || 'BCHICLRM',
+              idDocumentNumber: details.idDocumentNumber
             };
             break;
         }

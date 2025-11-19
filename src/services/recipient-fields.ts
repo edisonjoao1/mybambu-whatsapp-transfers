@@ -49,28 +49,32 @@ export const COUNTRY_BANK_REQUIREMENTS: Record<string, CountryBankRequirements> 
         label: 'CPF',
         description: 'Brazilian tax ID (11 digits)',
         required: true,
-        example: '12345678901'
+        example: '12345678901',
+        aliases: ['CPF', 'Tax ID', 'Cadastro de Pessoas Físicas', 'Documento']
       },
       {
         name: 'accountNumber',
         label: 'Account Number',
         description: 'Bank account number',
         required: true,
-        example: '12345678'
+        example: '12345678',
+        aliases: ['Account number', 'Account', 'Número da conta', 'Numero da conta', 'Conta']
       },
       {
         name: 'accountType',
         label: 'Account Type',
         description: 'checking or savings',
         required: true,
-        example: 'checking'
+        example: 'checking',
+        aliases: ['Account type', 'Type', 'Tipo de conta', 'Tipo', 'Checking', 'Savings', 'Corrente', 'Poupança', 'Poupanca']
       },
       {
         name: 'bankCode',
         label: 'Bank Code',
         description: '3-digit bank code',
         required: true,
-        example: '001'
+        example: '001',
+        aliases: ['Bank code', 'Code', 'Código do banco', 'Codigo do banco', 'Banco']
       }
     ],
     instructions: 'For Brazil, we need the recipient\'s CPF (tax ID), bank account number, account type (checking or savings), and the 3-digit bank code.'
@@ -115,6 +119,98 @@ export const COUNTRY_BANK_REQUIREMENTS: Record<string, CountryBankRequirements> 
       }
     ],
     instructions: 'For European transfers, we need the recipient\'s IBAN (International Bank Account Number). This can be found on their bank statement.'
+  },
+
+  // Argentina
+  'ARS': {
+    country: 'Argentina',
+    currency: 'ARS',
+    accountType: 'argentina',
+    fields: [
+      {
+        name: 'accountNumber',
+        label: 'CBU/CVU Number',
+        description: 'Argentine bank account number (22 digits)',
+        required: true,
+        example: '0170099520000006542386',
+        aliases: ['CBU', 'CVU', 'Account number', 'Número de cuenta', 'Numero de cuenta', 'Cuenta']
+      },
+      {
+        name: 'accountType',
+        label: 'Account Type',
+        description: 'CHECKING (cuenta corriente) or SAVINGS (caja de ahorro)',
+        required: true,
+        example: 'SAVINGS',
+        aliases: ['Account type', 'Type', 'Tipo de cuenta', 'Tipo', 'Checking', 'Savings', 'Cuenta corriente', 'Caja de ahorro']
+      },
+      {
+        name: 'phoneNumber',
+        label: 'Phone Number',
+        description: 'Argentine phone number (10-20 digits)',
+        required: true,
+        example: '1145678901',
+        aliases: ['Phone', 'Phone number', 'Teléfono', 'Telefono']
+      },
+      {
+        name: 'idDocumentNumber',
+        label: 'DNI/CUIT/CUIL',
+        description: 'Argentine national ID (DNI), CUIT, or CUIL',
+        required: true,
+        example: '12345678',
+        aliases: ['DNI', 'CUIT', 'CUIL', 'ID', 'Documento', 'Identification']
+      },
+      {
+        name: 'city',
+        label: 'City',
+        description: 'City where recipient lives',
+        required: true,
+        example: 'Buenos Aires',
+        aliases: ['City', 'Ciudad']
+      }
+    ],
+    instructions: 'For Argentina, we need the recipient\'s CBU or CVU (22-digit bank account number), account type (CHECKING or SAVINGS), phone number, DNI/CUIT/CUIL, and city.'
+  },
+
+  // Chile
+  'CLP': {
+    country: 'Chile',
+    currency: 'CLP',
+    accountType: 'chile',
+    fields: [
+      {
+        name: 'accountNumber',
+        label: 'Account Number',
+        description: 'Chilean bank account number',
+        required: true,
+        example: '1234567890',
+        aliases: ['Account number', 'Account', 'Número de cuenta', 'Numero de cuenta', 'Cuenta']
+      },
+      {
+        name: 'accountType',
+        label: 'Account Type',
+        description: 'CHECKING (cuenta corriente) or SAVINGS (cuenta de ahorro)',
+        required: true,
+        example: 'CHECKING',
+        aliases: ['Account type', 'Type', 'Tipo de cuenta', 'Tipo', 'Checking', 'Savings', 'Cuenta corriente', 'Cuenta de ahorro']
+      },
+      {
+        name: 'bankCode',
+        label: 'Bank Code',
+        description: 'Chilean bank code (e.g., BCHICLRM for Banco de Chile)',
+        required: true,
+        example: 'BCHICLRM',
+        aliases: ['Bank code', 'Code', 'Código del banco', 'Codigo del banco', 'Banco', 'SWIFT', 'BIC']
+      },
+      {
+        name: 'idDocumentNumber',
+        label: 'RUT',
+        description: 'Chilean RUT (Rol Único Tributario)',
+        required: true,
+        example: '12345678-9',
+        aliases: ['RUT', 'Rol Unico Tributario', 'ID', 'Documento']
+      }
+    ],
+    instructions: 'For Chile, we need the recipient\'s bank account number, account type (CHECKING or SAVINGS), bank code (SWIFT/BIC), and RUT (Chilean ID).'
   },
 
   // Colombia
