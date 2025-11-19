@@ -154,8 +154,6 @@ export const COUNTRY_NAMES: Record<string, { en: string; es: string; flag: strin
   'MXN': { en: 'Mexico', es: 'México', flag: '🇲🇽' },
   'COP': { en: 'Colombia', es: 'Colombia', flag: '🇨🇴' },
   'BRL': { en: 'Brazil', es: 'Brasil', flag: '🇧🇷' },
-  'ARS': { en: 'Argentina', es: 'Argentina', flag: '🇦🇷' },
-  'CLP': { en: 'Chile', es: 'Chile', flag: '🇨🇱' },
   'GBP': { en: 'United Kingdom', es: 'Reino Unido', flag: '🇬🇧' },
   'EUR': { en: 'Europe', es: 'Europa', flag: '🇪🇺' },
 };
