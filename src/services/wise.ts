@@ -252,9 +252,12 @@ export class WiseService {
             phoneNumber: params.phoneNumber,
             idDocumentType: 'CC',
             idDocumentNumber: params.idDocumentNumber,
-            city: params.city,
-            firstLine: params.address,
-            postCode: params.postCode
+            address: {
+              country: 'CO',
+              city: params.city,
+              firstLine: params.address,
+              postCode: params.postCode
+            }
           };
           break;
 
