@@ -27,42 +27,19 @@ echo "📦 Initializing Railway project..."
 railway init --name bambu-whatsapp 2>/dev/null || echo "Project might already exist, continuing..."
 echo ""
 
-# Set environment variables interactively
+# Set ALL environment variables at once (credentials pre-configured)
 echo "🔧 Setting environment variables..."
-echo ""
-echo "⚠️  Please have your credentials ready:"
-echo "  - WhatsApp Access Token (from developers.facebook.com)"
-echo "  - WhatsApp Phone Number ID"
-echo "  - Webhook Verify Token (any secure random string)"
-echo "  - Wise API Key (from wise.com sandbox)"
-echo "  - Wise Profile ID"
-echo ""
+railway variables set \
+  WHATSAPP_ACCESS_TOKEN="EAAc7PlLT7ZBABP4maDZCJKvxJNIETbNdg0628j2HIJx4wTPtZBAGT2fAu6VUotY7uriJqfhY2rVBNZBSkoT7nHESfv1SN8z5umtYOLJZBbt8YZAYMY4XumggR8oRDu8mjgOI72ZAb2AQ5ZCljIxqnUYFY7nTTLqzHEAFJ9at8OrFLyjffWyw5FXxXf3dMarJSpso4EPkgL3ZCCBb1zgEOCyb3bYRPpKZCdOJWGtBUsZAGBBawTXaagSC2xWWZAc38R77hwSiS5uA2224qUClxP2cCgZDZD" \
+  WHATSAPP_PHONE_NUMBER_ID="826251713912705" \
+  WEBHOOK_VERIFY_TOKEN="bambusend_secure_2024" \
+  MODE="DEMO" \
+  WISE_API_KEY="1624cba2-cdfa-424f-91d8-787a5225d52e" \
+  WISE_PROFILE_ID="29182377" \
+  WISE_API_URL="https://api.sandbox.transferwise.tech" \
+  PORT="3000"
 
-read -p "Enter WHATSAPP_ACCESS_TOKEN: " WHATSAPP_TOKEN
-railway variables set WHATSAPP_ACCESS_TOKEN="$WHATSAPP_TOKEN"
-
-read -p "Enter WHATSAPP_PHONE_NUMBER_ID: " PHONE_ID
-railway variables set WHATSAPP_PHONE_NUMBER_ID="$PHONE_ID"
-
-read -p "Enter WEBHOOK_VERIFY_TOKEN (or press Enter for default): " VERIFY_TOKEN
-VERIFY_TOKEN=${VERIFY_TOKEN:-bambusend_secure_2024}
-railway variables set WEBHOOK_VERIFY_TOKEN="$VERIFY_TOKEN"
-
-read -p "Enter MODE (DEMO or PRODUCTION, default: DEMO): " MODE
-MODE=${MODE:-DEMO}
-railway variables set MODE="$MODE"
-
-read -p "Enter WISE_API_KEY: " WISE_KEY
-railway variables set WISE_API_KEY="$WISE_KEY"
-
-read -p "Enter WISE_PROFILE_ID: " WISE_PROFILE
-railway variables set WISE_PROFILE_ID="$WISE_PROFILE"
-
-read -p "Enter WISE_API_URL (default: https://api.sandbox.transferwise.tech): " WISE_URL
-WISE_URL=${WISE_URL:-https://api.sandbox.transferwise.tech}
-railway variables set WISE_API_URL="$WISE_URL"
-
-railway variables set PORT="3000"
+VERIFY_TOKEN="bambusend_secure_2024"
 
 echo ""
 echo "✅ Environment variables set!"
