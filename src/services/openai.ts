@@ -65,7 +65,7 @@ export async function callOpenAI(
   context: ConversationContext
 ): Promise<string> {
   try {
-    const { language, sessionStep, userPhone } = context;
+    const { language, sessionStep, userPhone, recentMessages } = context;
 
     // System prompt - defines bot behavior
     const systemPrompt = language === 'es'
@@ -100,13 +100,32 @@ SERVICES:
 - Current mode: PRODUCTION (real transfers)
 - Powered by Wise for competitive rates`;
 
+    // Build messages array with conversation history
+    const messages: Array<{ role: 'system' | 'user' | 'assistant', content: string }> = [
+      { role: 'system', content: systemPrompt }
+    ];
+
+    // Add recent conversation history if available (last 3-4 messages for context)
+    if (recentMessages && recentMessages.length > 0) {
+      const historyToInclude = recentMessages.slice(-4); // Last 4 messages
+      historyToInclude.forEach(msg => {
+        if (msg.startsWith('User: ')) {
+          messages.push({ role: 'user', content: msg.substring(6) });
+        } else if (msg.startsWith('Bot: ')) {
+          messages.push({ role: 'assistant', content: msg.substring(5) });
+        }
+      });
+    }
+
+    // Add current user message (if not already in history)
+    if (!recentMessages || !recentMessages.some(m => m.includes(userMessage))) {
+      messages.push({ role: 'user', content: userMessage });
+    }
+
     // Call OpenAI
     const completion = await openai.chat.completions.create({
       model: 'gpt-4o-mini', // Fast, cheap, good for conversations
-      messages: [
-        { role: 'system', content: systemPrompt },
-        { role: 'user', content: userMessage },
-      ],
+      messages: messages,
       max_tokens: 150, // Keep responses concise
       temperature: 0.7, // Balanced creativity
     });
