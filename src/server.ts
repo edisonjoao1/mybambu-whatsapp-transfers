@@ -524,14 +524,49 @@ async function handleCollectingBankDetails(from: string, text: string, session: 
   // Parse bank details from message
   const details = session.bankDetails || {};
 
-  // Simple extraction (in production, use better NLP)
+  // Build comprehensive field patterns including aliases
   for (const field of requirements.fields) {
-    // Check if field name or label appears in text
-    // Updated regex to match digits, word chars, spaces, hyphens, and other common characters
-    const fieldPattern = new RegExp(`(?:${field.name}|${field.label})\\s*:?\\s*([\\w\\s\\-\\.\\+\\(\\)]+)`, 'i');
-    const match = text.match(fieldPattern);
-    if (match && !details[field.name]) {
-      details[field.name] = match[1].trim();
+    // Skip if already captured
+    if (details[field.name]) continue;
+
+    // Build list of all possible field identifiers (name, label, and aliases)
+    const identifiers = [field.name, field.label];
+    if (field.aliases) {
+      identifiers.push(...field.aliases);
+    }
+
+    // Try each identifier
+    for (const identifier of identifiers) {
+      // Escape special regex characters in identifier
+      const escapedIdentifier = identifier.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+      // Match pattern: "Field name: value" where value stops at:
+      // - A dash followed by a word character (like " - C" or "-C")
+      // - A comma followed by a word character (like ", P")
+      // - A newline
+      // - End of string
+      // This preserves internal hyphens (like "45-47") but stops at field separators
+      const fieldPattern = new RegExp(
+        `${escapedIdentifier}\\s*:?\\s*([^:\\n]+?)(?=\\s*[-,]\\s*[A-Za-z]|\\n|$)`,
+        'i'
+      );
+
+      const match = text.match(fieldPattern);
+      if (match) {
+        // Clean the captured value:
+        // 1. Trim all whitespace
+        // 2. Remove trailing dashes and spaces
+        // 3. Remove trailing punctuation
+        let value = match[1].trim();
+        value = value.replace(/[\s\-,;]+$/, ''); // Remove trailing spaces, dashes, and punctuation
+        value = value.trim(); // Final trim after cleanup
+
+        if (value) {
+          details[field.name] = value;
+          console.log(`✅ Extracted ${field.name}: "${value}" (matched on "${identifier}")`);
+          break; // Found a match, move to next field
+        }
+      }
     }
   }
 

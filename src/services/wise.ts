@@ -248,16 +248,13 @@ export class WiseService {
             legalType: 'PRIVATE',
             bankCode: 'COLOCOBM',
             accountNumber: params.recipientBankAccount,
-            accountType: params.accountType || 'SAVINGS',
+            accountType: params.accountType?.toUpperCase() || 'SAVINGS',
             phoneNumber: params.phoneNumber,
             idDocumentType: 'CC',
             idDocumentNumber: params.idDocumentNumber,
-            address: {
-              country: 'CO',
-              city: params.city,
-              firstLine: params.address,
-              postCode: params.postCode
-            }
+            city: params.city,
+            firstLine: params.address,
+            postCode: params.postCode
           };
           break;
 

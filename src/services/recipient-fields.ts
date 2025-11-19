@@ -9,6 +9,7 @@ export interface BankFieldRequirement {
   description: string;
   required: boolean;
   example: string;
+  aliases?: string[]; // Alternative field names that map to this field
 }
 
 export interface CountryBankRequirements {
@@ -127,49 +128,56 @@ export const COUNTRY_BANK_REQUIREMENTS: Record<string, CountryBankRequirements> 
         label: 'Account Number',
         description: 'Bank account number (4-20 characters)',
         required: true,
-        example: '00012345678'
+        example: '00012345678',
+        aliases: ['Bank account number', 'Account number', 'Account']
       },
       {
         name: 'accountType',
         label: 'Account Type',
         description: 'CURRENT (checking) or SAVINGS',
         required: true,
-        example: 'SAVINGS'
+        example: 'SAVINGS',
+        aliases: ['Account type', 'Type', 'Tipo de cuenta']
       },
       {
         name: 'phoneNumber',
         label: 'Phone Number',
         description: 'Colombian phone number (7-20 digits)',
         required: true,
-        example: '3001234567'
+        example: '3001234567',
+        aliases: ['Phone', 'Phone number', 'Teléfono', 'Telefono']
       },
       {
         name: 'idDocumentNumber',
         label: 'Cédula Number',
         description: 'Colombian national ID number (Cédula de Ciudadanía)',
         required: true,
-        example: '1234567890'
+        example: '1234567890',
+        aliases: ['Cédula', 'Cedula', 'Cédula number', 'Cedula number', 'ID', 'CC']
       },
       {
         name: 'city',
         label: 'City',
         description: 'City where recipient lives',
         required: true,
-        example: 'Bogotá'
+        example: 'Bogotá',
+        aliases: ['City', 'Ciudad']
       },
       {
         name: 'address',
         label: 'Street Address',
         description: 'Recipient\'s street address',
         required: true,
-        example: 'Calle 123 #45-67'
+        example: 'Calle 123 #45-67',
+        aliases: ['Address', 'Street address', 'Dirección', 'Direccion']
       },
       {
         name: 'postCode',
         label: 'Post Code',
         description: 'Postal code',
         required: true,
-        example: '110111'
+        example: '110111',
+        aliases: ['Post code', 'Postcode', 'Postal code', 'Zip code', 'Zip', 'Código postal', 'Codigo postal']
       }
     ],
     instructions: 'For Colombia, we need the recipient\'s bank account number, account type (CURRENT for checking or SAVINGS), phone number, Cédula number (Colombian national ID), and complete address (city, street address, and postal code). Note: In Wise sandbox, only Bancolombia bank is supported for testing.'
