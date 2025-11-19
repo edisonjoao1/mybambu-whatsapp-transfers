@@ -663,7 +663,7 @@ async function handleConfirmation(from: string, text: string, session: UserSessi
           recipientBankAccount,
           recipientBankCode,
           targetCurrency: session.currency!,
-          reference: `WhatsApp transfer to ${session.recipientName}`,
+          reference: 'Transfer',
           ...extraFields
         });
 
