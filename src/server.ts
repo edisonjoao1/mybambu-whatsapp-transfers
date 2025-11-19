@@ -668,14 +668,15 @@ async function handleConfirmation(from: string, text: string, session: UserSessi
         });
 
         await sendWhatsAppMessage(from,
-          `✅ *Transfer Sent!*\n\n` +
+          `✅ *Transfer Created!*\n\n` +
           `💰 Sent: $${result.amount} USD\n` +
-          `📩 Receives: ${result.targetAmount.toFixed(2)} ${session.currency}\n` +
-          `💱 Rate: ${result.rate.toFixed(4)}\n` +
-          `💵 Fee: $${result.fee.toFixed(2)}\n` +
-          `⏱️ Delivery: ${result.estimatedDelivery}\n` +
-          `🆔 Transfer ID: ${result.transferId}\n\n` +
-          `✨ Real transfer via Wise API\n\n` +
+          `📩 Receives: ${result.targetAmount?.toFixed(2) || 'Processing'} ${session.currency}\n` +
+          `💱 Rate: ${result.rate?.toFixed(4) || 'N/A'}\n` +
+          `💵 Fee: $${result.fee?.toFixed(2) || 'N/A'}\n` +
+          `🆔 Transfer ID: ${result.transferId}\n` +
+          `📊 Status: ${result.status}\n\n` +
+          `✨ Transfer created successfully via Wise API!\n` +
+          `${result.status === 'incoming_payment_waiting' ? '⏳ Awaiting funding (sandbox limitation)\n' : ''}` +
           `Say "hello" to send another transfer!`
         );
       } else {
