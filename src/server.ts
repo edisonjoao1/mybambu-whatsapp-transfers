@@ -17,17 +17,24 @@ import { getBankRequirements, validateBankDetails } from './services/recipient-f
 dotenv.config();
 
 const app = express();
-app.use(express.json());
+app.use(express.json({ limit: '1mb' })); // Prevent DOS attacks
 
-// Configuration
-const PORT = process.env.PORT || 3000;
-const VERIFY_TOKEN = process.env.WEBHOOK_VERIFY_TOKEN || 'my_verify_token';
+// Configuration with validation
+const MODE = process.env.MODE || 'DEMO';
+const PORT = parseInt(process.env.PORT || '3000', 10);
+
+// Required environment variables
+const VERIFY_TOKEN = process.env.WEBHOOK_VERIFY_TOKEN;
+if (!VERIFY_TOKEN) {
+  console.error('❌ FATAL: WEBHOOK_VERIFY_TOKEN environment variable is required');
+  process.exit(1);
+}
+
 const WHATSAPP_TOKEN = process.env.WHATSAPP_ACCESS_TOKEN || '';
 const PHONE_NUMBER_ID = process.env.WHATSAPP_PHONE_NUMBER_ID || '';
 const WISE_API_KEY = process.env.WISE_API_KEY || '';
 const WISE_PROFILE_ID = process.env.WISE_PROFILE_ID || '';
 const WISE_API_URL = process.env.WISE_API_URL || 'https://api.sandbox.transferwise.tech';
-const MODE = process.env.MODE || 'DEMO';
 
 // Transfer corridors (same as Claude implementation)
 const TRANSFER_CORRIDORS: Record<string, any> = {
@@ -60,15 +67,71 @@ interface UserSession {
 }
 
 const sessions = new Map<string, UserSession>();
+const SESSION_TIMEOUT_MS = 30 * 60 * 1000; // 30 minutes
+const SESSION_CLEANUP_INTERVAL_MS = 60 * 60 * 1000; // Check every hour
+
+// Rate limiting
+const messageRateLimits = new Map<string, { count: number; resetTime: number }>();
+const MAX_MESSAGES_PER_MINUTE = 10;
+
+function checkRateLimit(phoneNumber: string): boolean {
+  const now = Date.now();
+  let entry = messageRateLimits.get(phoneNumber);
+
+  if (!entry || now > entry.resetTime) {
+    messageRateLimits.set(phoneNumber, { count: 1, resetTime: now + 60000 });
+    return true;
+  }
+
+  if (entry.count >= MAX_MESSAGES_PER_MINUTE) {
+    console.warn(`⚠️ Rate limit exceeded for ${phoneNumber}`);
+    return false;
+  }
+
+  entry.count++;
+  return true;
+}
 
 function getSession(phoneNumber: string): UserSession {
   if (!sessions.has(phoneNumber)) {
     sessions.set(phoneNumber, { step: 'idle', lastActivity: new Date() });
   }
+
   const session = sessions.get(phoneNumber)!;
-  session.lastActivity = new Date();
+  const now = new Date();
+
+  // Reset session if inactive for too long
+  if (now.getTime() - session.lastActivity.getTime() > SESSION_TIMEOUT_MS) {
+    console.log(`⏰ Session timeout for ${phoneNumber}, resetting`);
+    session.step = 'idle';
+    session.amount = undefined;
+    session.country = undefined;
+    session.currency = undefined;
+    session.recipientName = undefined;
+    session.bankDetails = undefined;
+  }
+
+  session.lastActivity = now;
   return session;
 }
+
+// Cleanup old sessions periodically to prevent memory leak
+setInterval(() => {
+  const now = new Date();
+  let cleaned = 0;
+
+  for (const [phone, session] of sessions.entries()) {
+    const inactiveMinutes = (now.getTime() - session.lastActivity.getTime()) / 1000 / 60;
+    if (inactiveMinutes > 1440) { // 24 hours
+      sessions.delete(phone);
+      cleaned++;
+    }
+  }
+
+  if (cleaned > 0) {
+    console.log(`🗑️ Cleaned ${cleaned} inactive sessions (total: ${sessions.size})`);
+  }
+}, SESSION_CLEANUP_INTERVAL_MS);
 
 // Initialize Wise service if credentials available
 if (MODE === 'PRODUCTION' && WISE_API_KEY && WISE_PROFILE_ID) {
@@ -137,6 +200,12 @@ function extractCountry(text: string): string | null {
 
 // Message handlers
 async function handleIncomingMessage(from: string, text: string) {
+  // Rate limiting check
+  if (!checkRateLimit(from)) {
+    console.warn(`🚫 Rate limit exceeded for ${from}`);
+    return; // Silently ignore - don't notify attacker
+  }
+
   const session = getSession(from);
   const lowerText = text.toLowerCase();
 

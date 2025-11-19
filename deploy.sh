@@ -2,6 +2,9 @@
 
 # WhatsApp Bot Deployment Script
 # Run this after: railway login
+#
+# IMPORTANT: This script prompts for credentials interactively.
+# DO NOT hardcode credentials in this file!
 
 set -e  # Exit on error
 
@@ -24,25 +27,44 @@ echo "📦 Initializing Railway project..."
 railway init --name bambu-whatsapp 2>/dev/null || echo "Project might already exist, continuing..."
 echo ""
 
-# Set environment variables
+# Set environment variables interactively
 echo "🔧 Setting environment variables..."
+echo ""
+echo "⚠️  Please have your credentials ready:"
+echo "  - WhatsApp Access Token (from developers.facebook.com)"
+echo "  - WhatsApp Phone Number ID"
+echo "  - Webhook Verify Token (any secure random string)"
+echo "  - Wise API Key (from wise.com sandbox)"
+echo "  - Wise Profile ID"
+echo ""
 
-railway variables set WHATSAPP_ACCESS_TOKEN="EAAc7PlLT7ZBABPZBkpt8DWKFL6izg98ZBsdYZAb5N5GdH84Q2J3Bp3HUtiZB0ie64aquqZB0tpJEdRZAoRVZBjTsIAfFteLiG39RTpWM39ncmZB3jUjFtPW5NLSeLfKQYjNmzHyLPQ216N0IV5NkX9ZCuxypiQDRQ8P7dCGNKFyizqsI8kMeMs8OHQuXmF3j99ZCLukvxIofPsQDipKTJEuzG3ZBlDWrNix7KTtCZAVsexU5jmC1HAcKbfQZBvnxM3dUgwGNFNZBotaVPdmk1gRBuoYojcZD"
+read -p "Enter WHATSAPP_ACCESS_TOKEN: " WHATSAPP_TOKEN
+railway variables set WHATSAPP_ACCESS_TOKEN="$WHATSAPP_TOKEN"
 
-railway variables set WHATSAPP_PHONE_NUMBER_ID="826251713912705"
+read -p "Enter WHATSAPP_PHONE_NUMBER_ID: " PHONE_ID
+railway variables set WHATSAPP_PHONE_NUMBER_ID="$PHONE_ID"
 
-railway variables set WEBHOOK_VERIFY_TOKEN="bambusend_secure_2024"
+read -p "Enter WEBHOOK_VERIFY_TOKEN (or press Enter for default): " VERIFY_TOKEN
+VERIFY_TOKEN=${VERIFY_TOKEN:-bambusend_secure_2024}
+railway variables set WEBHOOK_VERIFY_TOKEN="$VERIFY_TOKEN"
 
-railway variables set MODE="DEMO"
+read -p "Enter MODE (DEMO or PRODUCTION, default: DEMO): " MODE
+MODE=${MODE:-DEMO}
+railway variables set MODE="$MODE"
 
-railway variables set WISE_API_KEY="1624cba2-cdfa-424f-91d8-787a5225d52e"
+read -p "Enter WISE_API_KEY: " WISE_KEY
+railway variables set WISE_API_KEY="$WISE_KEY"
 
-railway variables set WISE_PROFILE_ID="29182377"
+read -p "Enter WISE_PROFILE_ID: " WISE_PROFILE
+railway variables set WISE_PROFILE_ID="$WISE_PROFILE"
 
-railway variables set WISE_API_URL="https://api.sandbox.transferwise.tech"
+read -p "Enter WISE_API_URL (default: https://api.sandbox.transferwise.tech): " WISE_URL
+WISE_URL=${WISE_URL:-https://api.sandbox.transferwise.tech}
+railway variables set WISE_API_URL="$WISE_URL"
 
 railway variables set PORT="3000"
 
+echo ""
 echo "✅ Environment variables set!"
 echo ""
 
@@ -75,11 +97,10 @@ echo "2. Configure webhook in Facebook:"
 echo "   Go to: https://developers.facebook.com/apps/YOUR_APP_ID/whatsapp-business/wa-settings/"
 echo ""
 echo "   Callback URL: $URL/webhook"
-echo "   Verify Token: bambusend_secure_2024"
+echo "   Verify Token: $VERIFY_TOKEN"
 echo "   Subscribe to: messages"
 echo ""
-echo "3. Test by sending WhatsApp message to: +1 555 159 4893"
-echo "   Message: Hello"
+echo "3. Test by sending WhatsApp message to your business number"
 echo ""
 echo "4. View logs:"
 echo "   railway logs --follow"

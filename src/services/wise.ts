@@ -48,6 +48,7 @@ export class WiseService {
     this.profileId = config.profileId;
     this.client = axios.create({
       baseURL: config.apiUrl,
+      timeout: 15000, // 15 seconds to stay within webhook 20s limit
       headers: {
         'Authorization': `Bearer ${config.apiKey}`,
         'Content-Type': 'application/json'
@@ -219,7 +220,7 @@ export class WiseService {
             legalType: 'PRIVATE',
             cpf: params.recipientBankCode || '12345678901',
             accountNumber: params.recipientBankAccount || '12345678',
-            accountType: 'checking',
+            accountType: params.accountType?.toLowerCase() || 'checking',
             bankCode: '001'
           };
           break;
