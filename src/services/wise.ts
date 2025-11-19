@@ -190,6 +190,8 @@ export class WiseService {
     city?: string;
     postCode?: string;
     accountType?: string;
+    cpf?: string;
+    bankCode?: string;
   }) {
     try {
       // Step 1: Create quote
@@ -218,10 +220,10 @@ export class WiseService {
           recipientType = 'brazilian';
           recipientDetails = {
             legalType: 'PRIVATE',
-            cpf: params.recipientBankCode || '12345678901',
+            cpf: params.cpf || '12345678901',
             accountNumber: params.recipientBankAccount || '12345678',
             accountType: params.accountType?.toLowerCase() || 'checking',
-            bankCode: '001'
+            bankCode: params.bankCode || '001'
           };
           break;
 

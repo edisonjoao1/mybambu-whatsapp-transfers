@@ -49,28 +49,32 @@ export const COUNTRY_BANK_REQUIREMENTS: Record<string, CountryBankRequirements> 
         label: 'CPF',
         description: 'Brazilian tax ID (11 digits)',
         required: true,
-        example: '12345678901'
+        example: '12345678901',
+        aliases: ['CPF', 'Tax ID', 'Cadastro de Pessoas Físicas', 'Documento']
       },
       {
         name: 'accountNumber',
         label: 'Account Number',
         description: 'Bank account number',
         required: true,
-        example: '12345678'
+        example: '12345678',
+        aliases: ['Account number', 'Account', 'Número da conta', 'Numero da conta', 'Conta']
       },
       {
         name: 'accountType',
         label: 'Account Type',
         description: 'checking or savings',
         required: true,
-        example: 'checking'
+        example: 'checking',
+        aliases: ['Account type', 'Type', 'Tipo de conta', 'Tipo', 'Checking', 'Savings', 'Corrente', 'Poupança', 'Poupanca']
       },
       {
         name: 'bankCode',
         label: 'Bank Code',
         description: '3-digit bank code',
         required: true,
-        example: '001'
+        example: '001',
+        aliases: ['Bank code', 'Code', 'Código do banco', 'Codigo do banco', 'Banco']
       }
     ],
     instructions: 'For Brazil, we need the recipient\'s CPF (tax ID), bank account number, account type (checking or savings), and the 3-digit bank code.'
