@@ -12,6 +12,14 @@ import dotenv from 'dotenv';
 import axios from 'axios';
 import { initializeWiseService, getWiseService } from './services/wise.js';
 import { getBankRequirements, validateBankDetails } from './services/recipient-fields.js';
+import {
+  callOpenAI,
+  detectLanguage,
+  getTransferExamples,
+  getCountryName,
+  getCountryFlag,
+  type Language
+} from './services/openai.js';
 
 // Load environment variables
 dotenv.config();
@@ -64,6 +72,7 @@ interface UserSession {
   recipientName?: string;
   bankDetails?: Record<string, any>;
   lastActivity: Date;
+  language?: Language; // Detected user language (es/en)
 }
 
 const sessions = new Map<string, UserSession>();
@@ -190,6 +199,19 @@ function extractAmount(text: string): number | null {
 
 function extractCountry(text: string): string | null {
   const lowerText = text.toLowerCase();
+
+  // Check Spanish country names first
+  if (lowerText.includes('méxico') || lowerText.includes('mexico')) {
+    return 'Mexico';
+  }
+  if (lowerText.includes('brasil')) {
+    return 'Brazil';
+  }
+  if (lowerText.includes('reino unido')) {
+    return 'United Kingdom';
+  }
+
+  // Check English names
   for (const [key, value] of Object.entries(TRANSFER_CORRIDORS)) {
     if (lowerText.includes(key)) {
       return value.country;
@@ -209,34 +231,56 @@ async function handleIncomingMessage(from: string, text: string) {
   const session = getSession(from);
   const lowerText = text.toLowerCase();
 
-  console.log(`📱 ${from} [${session.step}]: ${text}`);
+  // Detect language if not set
+  if (!session.language) {
+    session.language = detectLanguage(text);
+    console.log(`🌐 Language detected for ${from}: ${session.language}`);
+  }
+
+  console.log(`📱 ${from} [${session.step}] [${session.language}]: ${text}`);
 
   // Global commands
-  if (lowerText.includes('cancel') || lowerText.includes('stop') || lowerText.includes('reset')) {
+  if (lowerText.includes('cancel') || lowerText.includes('stop') || lowerText.includes('reset') ||
+      lowerText.includes('cancelar') || lowerText.includes('parar')) {
     session.step = 'idle';
     session.amount = undefined;
     session.country = undefined;
     session.recipientName = undefined;
     session.bankDetails = undefined;
-    await sendWhatsAppMessage(from, '🔄 Transfer cancelled. Say "hello" to start again.');
+    const message = session.language === 'es'
+      ? '🔄 Transferencia cancelada. Escribe "hola" para empezar de nuevo.'
+      : '🔄 Transfer cancelled. Say "hello" to start again.';
+    await sendWhatsAppMessage(from, message);
     return;
   }
 
-  if (lowerText.includes('help')) {
-    await sendWhatsAppMessage(from,
-      '💡 *MyBambu Help*\n\n' +
-      'I can help you send money to:\n' +
-      '• Mexico\n' +
-      '• Colombia\n' +
-      '• Brazil\n' +
-      '• United Kingdom\n' +
-      '• Europe\n\n' +
-      'Try:\n' +
-      '• "Send $100 to Mexico"\n' +
-      '• "What\'s the rate to Colombia?"\n' +
-      '• "Send money to my family"\n\n' +
-      'Say "cancel" anytime to stop.'
-    );
+  if (lowerText.includes('help') || lowerText.includes('ayuda')) {
+    const message = session.language === 'es'
+      ? '💡 *Ayuda de MyBambu*\n\n' +
+        'Puedo ayudarte a enviar dinero a:\n' +
+        '• México 🇲🇽\n' +
+        '• Colombia 🇨🇴\n' +
+        '• Brasil 🇧🇷\n' +
+        '• Reino Unido 🇬🇧\n' +
+        '• Europa 🇪🇺\n\n' +
+        'Prueba:\n' +
+        '• "Enviar $100 a México"\n' +
+        '• "¿Cuál es la tasa para Colombia?"\n' +
+        '• "Enviar dinero a mi familia"\n\n' +
+        'Escribe "cancelar" en cualquier momento.'
+      : '💡 *MyBambu Help*\n\n' +
+        'I can help you send money to:\n' +
+        '• Mexico 🇲🇽\n' +
+        '• Colombia 🇨🇴\n' +
+        '• Brazil 🇧🇷\n' +
+        '• United Kingdom 🇬🇧\n' +
+        '• Europe 🇪🇺\n\n' +
+        'Try:\n' +
+        '• "Send $100 to Mexico"\n' +
+        '• "What\'s the rate to Colombia?"\n' +
+        '• "Send money to my family"\n\n' +
+        'Say "cancel" anytime to stop.';
+    await sendWhatsAppMessage(from, message);
     return;
   }
 
@@ -270,20 +314,31 @@ async function handleIncomingMessage(from: string, text: string) {
 
 async function handleIdleState(from: string, text: string, session: UserSession) {
   const lowerText = text.toLowerCase();
+  const isSpanish = session.language === 'es';
 
   // Greeting
-  if (lowerText.includes('hello') || lowerText.includes('hi') || lowerText.includes('hey')) {
-    await sendWhatsAppMessage(from,
-      '👋 *Welcome to MyBambu!*\n\n' +
-      'I help you send money internationally with great rates.\n\n' +
-      '🌎 Supported countries:\n' +
-      '• Mexico\n' +
-      '• Colombia\n' +
-      '• Brazil\n' +
-      '• United Kingdom\n' +
-      '• Europe\n\n' +
-      'Try: "Send $100 to Mexico"'
-    );
+  if (lowerText.includes('hello') || lowerText.includes('hi') || lowerText.includes('hey') ||
+      lowerText.includes('hola') || lowerText.includes('buenos') || lowerText.includes('buenas')) {
+    const message = isSpanish
+      ? '👋 *¡Bienvenido a MyBambu!*\n\n' +
+        'Te ayudo a enviar dinero internacionalmente con excelentes tasas.\n\n' +
+        '🌎 Países disponibles:\n' +
+        '• México 🇲🇽\n' +
+        '• Colombia 🇨🇴\n' +
+        '• Brasil 🇧🇷\n' +
+        '• Reino Unido 🇬🇧\n' +
+        '• Europa 🇪🇺\n\n' +
+        getTransferExamples('es')
+      : '👋 *Welcome to MyBambu!*\n\n' +
+        'I help you send money internationally with great rates.\n\n' +
+        '🌎 Supported countries:\n' +
+        '• Mexico 🇲🇽\n' +
+        '• Colombia 🇨🇴\n' +
+        '• Brazil 🇧🇷\n' +
+        '• United Kingdom 🇬🇧\n' +
+        '• Europe 🇪🇺\n\n' +
+        getTransferExamples('en');
+    await sendWhatsAppMessage(from, message);
     return;
   }
 
@@ -306,8 +361,9 @@ async function handleIdleState(from: string, text: string, session: UserSession)
     return;
   }
 
-  // Send money intent
-  if (lowerText.includes('send')) {
+  // Send money intent (English and Spanish)
+  if (lowerText.includes('send') || lowerText.includes('enviar') ||
+      lowerText.includes('transferir') || lowerText.includes('mandar')) {
     const amount = extractAmount(text);
     const country = extractCountry(text);
 
@@ -318,37 +374,68 @@ async function handleIdleState(from: string, text: string, session: UserSession)
       session.currency = corridor?.currency;
       session.step = 'collecting_recipient';
 
-      await sendWhatsAppMessage(from,
-        `✅ Got it! Sending *$${amount} USD* to *${country}*\n\n` +
-        `📝 What's the recipient's full name?`
-      );
+      const flag = getCountryFlag(session.currency || '');
+      const message = isSpanish
+        ? `✅ ¡Entendido! Enviando *$${amount} USD* a *${country}* ${flag}\n\n` +
+          `📝 ¿Cuál es el nombre completo del destinatario?`
+        : `✅ Got it! Sending *$${amount} USD* to *${country}* ${flag}\n\n` +
+          `📝 What's the recipient's full name?`;
+
+      await sendWhatsAppMessage(from, message);
     } else if (amount) {
       session.amount = amount;
       session.step = 'collecting_country';
-      await sendWhatsAppMessage(from,
-        `✅ Sending *$${amount} USD*\n\n` +
-        `🌎 Which country?\n` +
-        `• Mexico\n` +
-        `• Colombia\n` +
-        `• Brazil\n` +
-        `• United Kingdom\n` +
-        `• Europe`
-      );
+      const message = isSpanish
+        ? `✅ Enviando *$${amount} USD*\n\n` +
+          `🌎 ¿A qué país?\n` +
+          `• México 🇲🇽\n` +
+          `• Colombia 🇨🇴\n` +
+          `• Brasil 🇧🇷\n` +
+          `• Reino Unido 🇬🇧\n` +
+          `• Europa 🇪🇺`
+        : `✅ Sending *$${amount} USD*\n\n` +
+          `🌎 Which country?\n` +
+          `• Mexico 🇲🇽\n` +
+          `• Colombia 🇨🇴\n` +
+          `• Brazil 🇧🇷\n` +
+          `• United Kingdom 🇬🇧\n` +
+          `• Europe 🇪🇺`;
+      await sendWhatsAppMessage(from, message);
     } else {
       session.step = 'collecting_amount';
-      await sendWhatsAppMessage(from, '💰 How much would you like to send? (in USD)');
+      const message = isSpanish
+        ? '💰 ¿Cuánto quieres enviar? (en USD)\n\n' + getTransferExamples('es')
+        : '💰 How much would you like to send? (in USD)\n\n' + getTransferExamples('en');
+      await sendWhatsAppMessage(from, message);
     }
     return;
   }
 
-  // Default fallback
-  await sendWhatsAppMessage(from,
-    '👋 I can help you send money internationally!\n\n' +
-    'Try:\n' +
-    '• "Send $100 to Mexico"\n' +
-    '• "Check rate to Colombia"\n' +
-    '• "Help"'
-  );
+  // AI fallback for unrecognized messages
+  try {
+    console.log(`🤖 Using AI fallback for: "${text}"`);
+    const aiResponse = await callOpenAI(text, {
+      userPhone: from,
+      language: session.language || 'en',
+      sessionStep: session.step,
+    });
+    await sendWhatsAppMessage(from, aiResponse);
+  } catch (error) {
+    console.error('❌ AI fallback failed:', error);
+    // Final fallback
+    const message = isSpanish
+      ? '👋 ¡Puedo ayudarte a enviar dinero internacionalmente!\n\n' +
+        'Prueba:\n' +
+        '• "Enviar $100 a México"\n' +
+        '• "Tasa para Colombia"\n' +
+        '• "Ayuda"'
+      : '👋 I can help you send money internationally!\n\n' +
+        'Try:\n' +
+        '• "Send $100 to Mexico"\n' +
+        '• "Check rate to Colombia"\n' +
+        '• "Help"';
+    await sendWhatsAppMessage(from, message);
+  }
 }
 
 async function handleCollectingAmount(from: string, text: string, session: UserSession) {
@@ -440,7 +527,8 @@ async function handleCollectingBankDetails(from: string, text: string, session: 
   // Simple extraction (in production, use better NLP)
   for (const field of requirements.fields) {
     // Check if field name or label appears in text
-    const fieldPattern = new RegExp(`(?:${field.name}|${field.label})\\s*:?\\s*([\\w\\s\\-]+)`, 'i');
+    // Updated regex to match digits, word chars, spaces, hyphens, and other common characters
+    const fieldPattern = new RegExp(`(?:${field.name}|${field.label})\\s*:?\\s*([\\w\\s\\-\\.\\+\\(\\)]+)`, 'i');
     const match = text.match(fieldPattern);
     if (match && !details[field.name]) {
       details[field.name] = match[1].trim();
