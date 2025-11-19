@@ -1,0 +1,22 @@
+# Fly.io configuration for MyBambu WhatsApp Bot
+app = "mybambu-whatsapp"
+primary_region = "iad"
+
+[build]
+
+[env]
+  PORT = "8080"
+  MODE = "DEMO"
+
+[http_service]
+  internal_port = 8080
+  force_https = true
+  auto_stop_machines = false
+  auto_start_machines = true
+  min_machines_running = 1
+  processes = ["app"]
+
+[[vm]]
+  cpu_kind = "shared"
+  cpus = 1
+  memory_mb = 256

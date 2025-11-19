@@ -579,14 +579,19 @@ app.get('/health', (req: Request, res: Response) => {
   });
 });
 
-// Start server
-app.listen(PORT, () => {
-  console.log('🚀 MyBambu WhatsApp Server');
-  console.log(`📍 Port: ${PORT}`);
-  console.log(`🎭 Mode: ${MODE}`);
-  console.log(`💬 WhatsApp: ${WHATSAPP_TOKEN ? '✅ Configured' : '❌ Missing TOKEN'}`);
-  console.log(`📞 Phone ID: ${PHONE_NUMBER_ID ? '✅ Configured' : '❌ Missing ID'}`);
-  console.log(`💸 Wise API: ${WISE_API_KEY ? '✅ Configured' : '❌ Missing KEY'}`);
-  console.log(`🌐 Webhook URL: http://localhost:${PORT}/webhook`);
-  console.log(`✅ Ready for messages!`);
-});
+// Start server (only in non-serverless environment)
+if (process.env.VERCEL !== '1') {
+  app.listen(PORT, () => {
+    console.log('🚀 MyBambu WhatsApp Server');
+    console.log(`📍 Port: ${PORT}`);
+    console.log(`🎭 Mode: ${MODE}`);
+    console.log(`💬 WhatsApp: ${WHATSAPP_TOKEN ? '✅ Configured' : '❌ Missing TOKEN'}`);
+    console.log(`📞 Phone ID: ${PHONE_NUMBER_ID ? '✅ Configured' : '❌ Missing ID'}`);
+    console.log(`💸 Wise API: ${WISE_API_KEY ? '✅ Configured' : '❌ Missing KEY'}`);
+    console.log(`🌐 Webhook URL: http://localhost:${PORT}/webhook`);
+    console.log(`✅ Ready for messages!`);
+  });
+}
+
+// Export for Vercel serverless
+export default app;
