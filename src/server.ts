@@ -20,6 +20,15 @@ import {
   getCountryFlag,
   type Language
 } from './services/openai.js';
+import {
+  storeVerificationCode,
+  canRequestVerification,
+  recordVerificationSent,
+  verifyCode,
+  getVerificationStatus,
+  formatVerificationMessageEnglish,
+  formatVerificationMessageSpanish
+} from './services/verification.js';
 
 // Load environment variables
 dotenv.config();
@@ -931,6 +940,164 @@ app.get('/health', (req: Request, res: Response) => {
     whatsappConfigured: !!WHATSAPP_TOKEN && !!PHONE_NUMBER_ID
   });
 });
+
+// ============================================================================
+// PHONE VERIFICATION API ENDPOINTS
+// ============================================================================
+
+/**
+ * POST /api/send-verification
+ * Send a verification code to a phone number via WhatsApp
+ */
+app.post('/api/send-verification', async (req: Request, res: Response) => {
+  try {
+    const { phoneNumber, language = 'en' } = req.body;
+
+    // Validate phone number
+    if (!phoneNumber || typeof phoneNumber !== 'string') {
+      return res.status(400).json({
+        success: false,
+        error: 'Phone number is required'
+      });
+    }
+
+    // Normalize phone number (remove spaces, dashes, etc.)
+    const normalizedPhone = phoneNumber.replace(/[\s\-\(\)]/g, '');
+
+    // Check rate limiting
+    const rateCheck = canRequestVerification(normalizedPhone);
+    if (!rateCheck.allowed) {
+      return res.status(429).json({
+        success: false,
+        error: rateCheck.reason,
+        retryAfter: rateCheck.retryAfter
+      });
+    }
+
+    // Generate and store verification code
+    const verification = storeVerificationCode(normalizedPhone);
+
+    // Format message based on language
+    const message = language === 'es'
+      ? formatVerificationMessageSpanish(verification.code)
+      : formatVerificationMessageEnglish(verification.code);
+
+    // Send via WhatsApp
+    await sendWhatsAppMessage(normalizedPhone, message);
+
+    // Record that code was sent (for rate limiting)
+    recordVerificationSent(normalizedPhone);
+
+    console.log(`✅ Verification code sent to ${normalizedPhone}`);
+
+    res.json({
+      success: true,
+      message: 'Verification code sent',
+      expiresIn: 600 // 10 minutes in seconds
+    });
+
+  } catch (error: any) {
+    console.error('❌ Verification send error:', error.message);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to send verification code'
+    });
+  }
+});
+
+/**
+ * POST /api/verify-code
+ * Verify a code for a phone number
+ */
+app.post('/api/verify-code', async (req: Request, res: Response) => {
+  try {
+    const { phoneNumber, code } = req.body;
+
+    // Validate inputs
+    if (!phoneNumber || typeof phoneNumber !== 'string') {
+      return res.status(400).json({
+        success: false,
+        error: 'Phone number is required'
+      });
+    }
+
+    if (!code || typeof code !== 'string') {
+      return res.status(400).json({
+        success: false,
+        error: 'Verification code is required'
+      });
+    }
+
+    // Normalize phone number
+    const normalizedPhone = phoneNumber.replace(/[\s\-\(\)]/g, '');
+
+    // Verify the code
+    const result = verifyCode(normalizedPhone, code);
+
+    if (result.valid) {
+      console.log(`✅ Phone verified: ${normalizedPhone}`);
+      return res.json({
+        success: true,
+        message: 'Phone number verified successfully'
+      });
+    } else {
+      return res.status(400).json({
+        success: false,
+        error: result.reason,
+        attemptsLeft: result.attemptsLeft
+      });
+    }
+
+  } catch (error: any) {
+    console.error('❌ Verification error:', error.message);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to verify code'
+    });
+  }
+});
+
+/**
+ * GET /api/verification-status/:phoneNumber
+ * Check verification status for a phone number
+ */
+app.get('/api/verification-status/:phoneNumber', async (req: Request, res: Response) => {
+  try {
+    const { phoneNumber } = req.params;
+    const normalizedPhone = phoneNumber.replace(/[\s\-\(\)]/g, '');
+
+    const status = getVerificationStatus(normalizedPhone);
+
+    res.json({
+      success: true,
+      ...status
+    });
+
+  } catch (error: any) {
+    console.error('❌ Status check error:', error.message);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to check verification status'
+    });
+  }
+});
+
+/**
+ * POST /api/resend-verification
+ * Resend verification code (alias for send-verification with better naming)
+ */
+app.post('/api/resend-verification', async (req: Request, res: Response) => {
+  // Reuse the send-verification logic
+  return app._router.handle(
+    { ...req, url: '/api/send-verification', path: '/api/send-verification' } as any,
+    res,
+    () => {}
+  );
+});
+
+// ============================================================================
+// SERVER STARTUP
+// ============================================================================
 
 // Start server (only in non-serverless environment)
 if (process.env.VERCEL !== '1') {
