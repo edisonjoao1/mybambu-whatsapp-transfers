@@ -391,9 +391,9 @@ async function handleIdleState(from: string, text: string, session: UserSession)
   if (lowerText.includes('hello') || lowerText.includes('hi') || lowerText.includes('hey') ||
       lowerText.includes('hola') || lowerText.includes('buenos') || lowerText.includes('buenas')) {
     const message = isSpanish
-      ? '👋 *¡Bienvenido a MyBambu!*\n\n' +
-        'Te ayudo a enviar dinero internacionalmente con excelentes tasas.\n\n' +
-        '🌎 Países disponibles:\n' +
+      ? '👋 *¡Hola! Bienvenido a MyBambu*\n\n' +
+        'Envía dinero a tus seres queridos con las mejores tasas del mercado. Rápido, seguro y fácil.\n\n' +
+        '🌎 *Enviamos a 9 países:*\n' +
         '• México 🇲🇽\n' +
         '• Colombia 🇨🇴\n' +
         '• Brasil 🇧🇷\n' +
@@ -403,10 +403,15 @@ async function handleIdleState(from: string, text: string, session: UserSession)
         '• Chile 🇨🇱\n' +
         '• Reino Unido 🇬🇧\n' +
         '• Europa 🇪🇺\n\n' +
-        getTransferExamples('es')
-      : '👋 *Welcome to MyBambu!*\n\n' +
-        'I help you send money internationally with great rates.\n\n' +
-        '🌎 Supported countries:\n' +
+        '💬 *¿Quieres enviar dinero hoy?*\n\n' +
+        'Solo dime algo como:\n' +
+        '• "Enviar $100 a México"\n' +
+        '• "Quiero enviar dinero a Colombia"\n' +
+        '• "Transferir a mi familia"\n\n' +
+        '¡Empecemos! 🚀'
+      : '👋 *Hi! Welcome to MyBambu*\n\n' +
+        'Send money to your loved ones with the best rates on the market. Fast, secure, and easy.\n\n' +
+        '🌎 *We send to 9 countries:*\n' +
         '• Mexico 🇲🇽\n' +
         '• Colombia 🇨🇴\n' +
         '• Brazil 🇧🇷\n' +
@@ -416,7 +421,12 @@ async function handleIdleState(from: string, text: string, session: UserSession)
         '• Chile 🇨🇱\n' +
         '• United Kingdom 🇬🇧\n' +
         '• Europe 🇪🇺\n\n' +
-        getTransferExamples('en');
+        '💬 *Want to send money today?*\n\n' +
+        'Just tell me something like:\n' +
+        '• "Send $100 to Mexico"\n' +
+        '• "I want to send money to Colombia"\n' +
+        '• "Transfer to my family"\n\n' +
+        'Let\'s get started! 🚀';
     await sendWhatsAppMessage(from, message);
     return;
   }
