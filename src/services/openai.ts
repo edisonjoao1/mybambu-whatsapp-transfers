@@ -5,6 +5,11 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
+// OpenAI Prompt and Vector Store IDs (with Wise documentation)
+const PROMPT_ID = 'pmpt_68e44e2add9c8194abed50d5d484025b03488bee75140d48';
+const PROMPT_VERSION = '42';
+const VECTOR_STORE_ID = 'vs_68e3f6dcb8f88191847f28999b99b50c';
+
 export type Language = 'en' | 'es';
 
 interface ConversationContext {
@@ -160,42 +165,56 @@ ERROR HANDLING:
 - If they ask about countries: "We support Mexico, Colombia, Brazil, UK, and Europe"
 - NEVER make up exact rates - say "To see current rate, start a transfer"${transferContext}`;
 
-    // Build messages array with conversation history
-    const messages: Array<{ role: 'system' | 'user' | 'assistant', content: string }> = [
-      { role: 'system', content: systemPrompt }
+    // Build conversation context for the prompt
+    let conversationContext = systemPrompt;
+
+    // Add recent conversation history
+    if (recentMessages && recentMessages.length > 0) {
+      conversationContext += '\n\nRECENT CONVERSATION:\n' + recentMessages.join('\n');
+    }
+
+    // Build input array with context and current message
+    const inputMessages = [
+      {
+        role: 'system' as const,
+        content: conversationContext
+      },
+      {
+        role: 'user' as const,
+        content: userMessage
+      }
     ];
 
-    // Add recent conversation history if available (last 3-4 messages for context)
-    if (recentMessages && recentMessages.length > 0) {
-      const historyToInclude = recentMessages.slice(-4); // Last 4 messages
-      historyToInclude.forEach(msg => {
-        if (msg.startsWith('User: ')) {
-          messages.push({ role: 'user', content: msg.substring(6) });
-        } else if (msg.startsWith('Bot: ')) {
-          messages.push({ role: 'assistant', content: msg.substring(5) });
+    // Call OpenAI Prompt API with file search and vector store
+    const response = await openai.responses.create({
+      prompt: {
+        id: PROMPT_ID,
+        version: PROMPT_VERSION
+      },
+      input: inputMessages,
+      text: {
+        format: {
+          type: 'text' as const
         }
-      });
-    }
-
-    // Add current user message (if not already in history)
-    if (!recentMessages || !recentMessages.some(m => m.includes(userMessage))) {
-      messages.push({ role: 'user', content: userMessage });
-    }
-
-    // Call OpenAI
-    const completion = await openai.chat.completions.create({
-      model: 'gpt-4o-mini', // Fast, cheap, good for conversations
-      messages: messages,
-      max_tokens: 150, // Keep responses concise
-      temperature: 0.7, // Balanced creativity
+      },
+      reasoning: {},
+      tools: [
+        {
+          type: 'file_search' as const,
+          vector_store_ids: [VECTOR_STORE_ID]
+        }
+      ],
+      max_output_tokens: 2048,
+      store: true,
+      include: ['web_search_call.action.sources' as any]
     });
 
-    const aiResponse = completion.choices[0]?.message?.content ||
+    const aiResponse = response.output?.[0]?.content ||
       (language === 'es'
         ? 'Lo siento, no pude procesar tu mensaje. ¿Puedes intentar de nuevo?'
         : "Sorry, I couldn't process your message. Can you try again?");
 
-    return aiResponse.trim();
+    return typeof aiResponse === 'string' ? aiResponse.trim() : String(aiResponse).trim();
 
   } catch (error: any) {
     console.error('❌ OpenAI Error:', error.message);
