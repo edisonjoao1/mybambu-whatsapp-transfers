@@ -1005,11 +1005,8 @@ app.post('/api/send-verification', async (req: Request, res: Response) => {
       });
     }
 
-    // Normalize phone number (remove spaces, dashes, etc.)
-    const normalizedPhone = phoneNumber.replace(/[\s\-\(\)]/g, '');
-
-    // Check rate limiting
-    const rateCheck = canRequestVerification(normalizedPhone);
+    // Check rate limiting (verification service will normalize phone internally)
+    const rateCheck = canRequestVerification(phoneNumber);
     if (!rateCheck.allowed) {
       return res.status(429).json({
         success: false,
@@ -1019,20 +1016,20 @@ app.post('/api/send-verification', async (req: Request, res: Response) => {
     }
 
     // Generate and store verification code
-    const verification = storeVerificationCode(normalizedPhone);
+    const verification = storeVerificationCode(phoneNumber);
 
     // Format message based on language
     const message = language === 'es'
       ? formatVerificationMessageSpanish(verification.code)
       : formatVerificationMessageEnglish(verification.code);
 
-    // Send via WhatsApp
-    await sendWhatsAppMessage(normalizedPhone, message);
+    // Send via WhatsApp (use normalized phone from verification)
+    await sendWhatsAppMessage(verification.phoneNumber, message);
 
     // Record that code was sent (for rate limiting)
-    recordVerificationSent(normalizedPhone);
+    recordVerificationSent(phoneNumber);
 
-    console.log(`✅ Verification code sent to ${normalizedPhone}`);
+    console.log(`✅ Verification code sent to ${verification.phoneNumber}`);
 
     res.json({
       success: true,
@@ -1072,14 +1069,11 @@ app.post('/api/verify-code', async (req: Request, res: Response) => {
       });
     }
 
-    // Normalize phone number
-    const normalizedPhone = phoneNumber.replace(/[\s\-\(\)]/g, '');
-
-    // Verify the code
-    const result = verifyCode(normalizedPhone, code);
+    // Verify the code (verification service will normalize phone internally)
+    const result = verifyCode(phoneNumber, code);
 
     if (result.valid) {
-      console.log(`✅ Phone verified: ${normalizedPhone}`);
+      // Don't log here - verification service already logs it
       return res.json({
         success: true,
         message: 'Phone number verified successfully'

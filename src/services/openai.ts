@@ -1,4 +1,8 @@
 import OpenAI from 'openai';
+import dotenv from 'dotenv';
+
+// Load environment variables
+dotenv.config();
 
 // Initialize OpenAI client
 const openai = new OpenAI({
