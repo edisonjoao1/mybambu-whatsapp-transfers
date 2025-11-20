@@ -3,6 +3,21 @@
  * Handles verification code generation, storage, and validation
  */
 
+/**
+ * Normalize phone number to E.164 format for consistent rate limiting
+ */
+function normalizePhoneNumber(phoneNumber: string): string {
+  // Remove all non-digit characters except leading +
+  let normalized = phoneNumber.replace(/[\s\-\(\)]/g, '');
+
+  // Ensure it starts with +
+  if (!normalized.startsWith('+')) {
+    normalized = '+' + normalized;
+  }
+
+  return normalized;
+}
+
 interface VerificationCode {
   code: string;
   phoneNumber: string;
@@ -36,20 +51,21 @@ export function generateVerificationCode(): string {
  * Store a verification code for a phone number
  */
 export function storeVerificationCode(phoneNumber: string): VerificationCode {
+  const normalizedPhone = normalizePhoneNumber(phoneNumber);
   const code = generateVerificationCode();
   const now = new Date();
   const expiresAt = new Date(now.getTime() + CODE_EXPIRY_MINUTES * 60 * 1000);
 
   const verificationCode: VerificationCode = {
     code,
-    phoneNumber,
+    phoneNumber: normalizedPhone,
     createdAt: now,
     expiresAt,
     attempts: 0,
     verified: false
   };
 
-  verificationCodes.set(phoneNumber, verificationCode);
+  verificationCodes.set(normalizedPhone, verificationCode);
 
   console.log(`📱 Verification code generated for ${phoneNumber}: ${code} (expires in ${CODE_EXPIRY_MINUTES}min)`);
 
@@ -60,8 +76,10 @@ export function storeVerificationCode(phoneNumber: string): VerificationCode {
  * Check if user can request a new code (rate limiting)
  */
 export function canRequestVerification(phoneNumber: string): { allowed: boolean; reason?: string; retryAfter?: number } {
+  const normalizedPhone = normalizePhoneNumber(phoneNumber);
+
   // Check resend cooldown (60 seconds between requests)
-  const lastSent = lastSendTime.get(phoneNumber);
+  const lastSent = lastSendTime.get(normalizedPhone);
   if (lastSent) {
     const secondsSinceLastSend = (Date.now() - lastSent.getTime()) / 1000;
     if (secondsSinceLastSend < RESEND_COOLDOWN_SECONDS) {
@@ -75,13 +93,13 @@ export function canRequestVerification(phoneNumber: string): { allowed: boolean;
   }
 
   // Check hourly resend limit
-  const resendData = resendAttempts.get(phoneNumber);
+  const resendData = resendAttempts.get(normalizedPhone);
   const now = new Date();
 
   if (resendData) {
     // Reset counter if hour has passed
     if (now >= resendData.resetAt) {
-      resendAttempts.delete(phoneNumber);
+      resendAttempts.delete(normalizedPhone);
     } else if (resendData.count >= MAX_RESENDS_PER_HOUR) {
       const minutesUntilReset = Math.ceil((resendData.resetAt.getTime() - now.getTime()) / 60000);
       return {
@@ -99,16 +117,17 @@ export function canRequestVerification(phoneNumber: string): { allowed: boolean;
  * Record that a verification code was sent
  */
 export function recordVerificationSent(phoneNumber: string): void {
-  lastSendTime.set(phoneNumber, new Date());
+  const normalizedPhone = normalizePhoneNumber(phoneNumber);
+  lastSendTime.set(normalizedPhone, new Date());
 
   const now = new Date();
-  const resendData = resendAttempts.get(phoneNumber);
+  const resendData = resendAttempts.get(normalizedPhone);
 
   if (resendData && now < resendData.resetAt) {
     resendData.count++;
   } else {
     const resetAt = new Date(now.getTime() + 60 * 60 * 1000); // 1 hour from now
-    resendAttempts.set(phoneNumber, { count: 1, resetAt });
+    resendAttempts.set(normalizedPhone, { count: 1, resetAt });
   }
 }
 
@@ -120,7 +139,8 @@ export function verifyCode(phoneNumber: string, code: string): {
   reason?: string;
   attemptsLeft?: number
 } {
-  const storedCode = verificationCodes.get(phoneNumber);
+  const normalizedPhone = normalizePhoneNumber(phoneNumber);
+  const storedCode = verificationCodes.get(normalizedPhone);
 
   if (!storedCode) {
     return {
@@ -131,7 +151,7 @@ export function verifyCode(phoneNumber: string, code: string): {
 
   // Check expiration
   if (new Date() > storedCode.expiresAt) {
-    verificationCodes.delete(phoneNumber);
+    verificationCodes.delete(normalizedPhone);
     return {
       valid: false,
       reason: 'Code expired. Please request a new code.'
@@ -146,17 +166,17 @@ export function verifyCode(phoneNumber: string, code: string): {
     };
   }
 
-  // Increment attempts
-  storedCode.attempts++;
-
-  // Check max attempts
-  if (storedCode.attempts > MAX_ATTEMPTS) {
-    verificationCodes.delete(phoneNumber);
+  // Check max attempts before incrementing
+  if (storedCode.attempts >= MAX_ATTEMPTS) {
+    verificationCodes.delete(normalizedPhone);
     return {
       valid: false,
       reason: 'Too many failed attempts. Please request a new code.'
     };
   }
+
+  // Increment attempts
+  storedCode.attempts++;
 
   // Verify code
   if (storedCode.code === code) {
@@ -165,7 +185,7 @@ export function verifyCode(phoneNumber: string, code: string): {
 
     // Clean up after 5 minutes (allow time for app to process)
     setTimeout(() => {
-      verificationCodes.delete(phoneNumber);
+      verificationCodes.delete(normalizedPhone);
     }, 5 * 60 * 1000);
 
     return { valid: true };
@@ -189,7 +209,8 @@ export function getVerificationStatus(phoneNumber: string): {
   attemptsLeft?: number;
   expiresIn?: number;
 } {
-  const storedCode = verificationCodes.get(phoneNumber);
+  const normalizedPhone = normalizePhoneNumber(phoneNumber);
+  const storedCode = verificationCodes.get(normalizedPhone);
 
   if (!storedCode) {
     return { exists: false };

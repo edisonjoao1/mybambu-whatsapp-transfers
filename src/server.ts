@@ -823,6 +823,50 @@ async function handleConfirmation(from: string, text: string, session: UserSessi
               postCode: details.postCode
             };
             break;
+          case 'CRC': // Costa Rica
+            recipientBankAccount = details.IBAN || '';
+            extraFields = {
+              IBAN: details.IBAN,
+              idDocumentType: details.idDocumentType || 'NATIONAL_ID_CARD',
+              idDocumentNumber: details.idDocumentNumber,
+              address: details.address,
+              city: details.city,
+              postCode: details.postCode
+            };
+            break;
+          case 'UYU': // Uruguay
+            recipientBankAccount = details.accountNumber || '';
+            extraFields = {
+              accountType: details.accountType || 'CHECKING',
+              idDocumentType: details.idDocumentType || 'NATIONAL_ID',
+              idDocumentNumber: details.idDocumentNumber,
+              bankCode: details.bankCode,
+              address: details.address,
+              city: details.city,
+              postCode: details.postCode
+            };
+            break;
+          case 'ARS': // Argentina
+            recipientBankAccount = details.accountNumber || '';
+            extraFields = {
+              taxId: details.taxId,
+              address: details.address,
+              city: details.city,
+              postCode: details.postCode
+            };
+            break;
+          case 'CLP': // Chile
+            recipientBankAccount = details.accountNumber || '';
+            extraFields = {
+              bankCode: details.bankCode,
+              rut: details.rut,
+              accountType: details.accountType || 'CHECKING',
+              phoneNumber: details.phoneNumber,
+              address: details.address,
+              city: details.city,
+              postCode: details.postCode
+            };
+            break;
         }
 
         const result = await wiseService.sendMoney({
