@@ -77,7 +77,6 @@ const EXCHANGE_RATES: Record<string, number> = {
   'BRL': 5.1,
   'CRC': 520,
   'UYU': 42,
-  'ARS': 1050,
   'CLP': 950,
   'GBP': 0.79,
   'EUR': 0.92
@@ -569,7 +568,6 @@ async function handleCollectingAmount(from: string, text: string, session: UserS
         `• Brasil 🇧🇷\n` +
         `• Costa Rica 🇨🇷\n` +
         `• Uruguay 🇺🇾\n` +
-        `• Argentina 🇦🇷\n` +
         `• Chile 🇨🇱\n` +
         `• Reino Unido 🇬🇧\n` +
         `• Europa 🇪🇺`
@@ -580,7 +578,6 @@ async function handleCollectingAmount(from: string, text: string, session: UserS
         `• Brazil 🇧🇷\n` +
         `• Costa Rica 🇨🇷\n` +
         `• Uruguay 🇺🇾\n` +
-        `• Argentina 🇦🇷\n` +
         `• Chile 🇨🇱\n` +
         `• United Kingdom 🇬🇧\n` +
         `• Europe 🇪🇺`;
