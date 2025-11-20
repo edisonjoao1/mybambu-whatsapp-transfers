@@ -472,18 +472,27 @@ async function handleIdleState(from: string, text: string, session: UserSession)
 
   // AI fallback for unrecognized messages
   try {
-    console.log(`🤖 Using AI fallback for: "${text}"`);
+    console.log(`🤖 Using AI support for: "${text}"`);
 
     // Get recent messages for context
     const recentMessages = session.conversationHistory
       .map(msg => `${msg.role === 'user' ? 'User' : 'Bot'}: ${msg.text}`)
       .slice(-4); // Last 4 messages for AI context
 
+    // Pass current transfer state to AI
+    const transferDetails = {
+      amount: session.amount,
+      country: session.country,
+      currency: session.currency,
+      recipientName: session.recipientName
+    };
+
     const aiResponse = await callOpenAI(text, {
       userPhone: from,
       language: session.language || 'en',
       sessionStep: session.step,
-      recentMessages: recentMessages
+      recentMessages: recentMessages,
+      transferDetails: transferDetails
     });
     await sendWhatsAppMessage(from, aiResponse);
   } catch (error) {
