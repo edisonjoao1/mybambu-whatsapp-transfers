@@ -51,6 +51,10 @@ const TRANSFER_CORRIDORS: Record<string, any> = {
   'colombia': { country: 'Colombia', currency: 'COP', deliveryTime: '1-3 business days' },
   'brazil': { country: 'Brazil', currency: 'BRL', deliveryTime: '1-3 business days' },
   'brasil': { country: 'Brazil', currency: 'BRL', deliveryTime: '1-3 business days' },
+  'costa rica': { country: 'Costa Rica', currency: 'CRC', deliveryTime: '1-3 business days' },
+  'uruguay': { country: 'Uruguay', currency: 'UYU', deliveryTime: '1-3 business days' },
+  'argentina': { country: 'Argentina', currency: 'ARS', deliveryTime: '1-3 business days' },
+  'chile': { country: 'Chile', currency: 'CLP', deliveryTime: '1-3 business days' },
   'uk': { country: 'United Kingdom', currency: 'GBP', deliveryTime: 'Same day' },
   'united kingdom': { country: 'United Kingdom', currency: 'GBP', deliveryTime: 'Same day' },
   'reino unido': { country: 'United Kingdom', currency: 'GBP', deliveryTime: 'Same day' },
@@ -63,6 +67,10 @@ const EXCHANGE_RATES: Record<string, number> = {
   'MXN': 17.2,
   'COP': 3750,
   'BRL': 5.1,
+  'CRC': 520,
+  'UYU': 42,
+  'ARS': 1050,
+  'CLP': 950,
   'GBP': 0.79,
   'EUR': 0.92
 };
@@ -320,6 +328,10 @@ async function handleIncomingMessage(from: string, text: string) {
         '• México 🇲🇽\n' +
         '• Colombia 🇨🇴\n' +
         '• Brasil 🇧🇷\n' +
+        '• Costa Rica 🇨🇷\n' +
+        '• Uruguay 🇺🇾\n' +
+        '• Argentina 🇦🇷\n' +
+        '• Chile 🇨🇱\n' +
         '• Reino Unido 🇬🇧\n' +
         '• Europa 🇪🇺\n\n' +
         'Prueba:\n' +
@@ -385,6 +397,10 @@ async function handleIdleState(from: string, text: string, session: UserSession)
         '• México 🇲🇽\n' +
         '• Colombia 🇨🇴\n' +
         '• Brasil 🇧🇷\n' +
+        '• Costa Rica 🇨🇷\n' +
+        '• Uruguay 🇺🇾\n' +
+        '• Argentina 🇦🇷\n' +
+        '• Chile 🇨🇱\n' +
         '• Reino Unido 🇬🇧\n' +
         '• Europa 🇪🇺\n\n' +
         getTransferExamples('es')
@@ -394,6 +410,10 @@ async function handleIdleState(from: string, text: string, session: UserSession)
         '• Mexico 🇲🇽\n' +
         '• Colombia 🇨🇴\n' +
         '• Brazil 🇧🇷\n' +
+        '• Costa Rica 🇨🇷\n' +
+        '• Uruguay 🇺🇾\n' +
+        '• Argentina 🇦🇷\n' +
+        '• Chile 🇨🇱\n' +
         '• United Kingdom 🇬🇧\n' +
         '• Europe 🇪🇺\n\n' +
         getTransferExamples('en');
@@ -450,6 +470,10 @@ async function handleIdleState(from: string, text: string, session: UserSession)
           `• México 🇲🇽\n` +
           `• Colombia 🇨🇴\n` +
           `• Brasil 🇧🇷\n` +
+          `• Costa Rica 🇨🇷\n` +
+          `• Uruguay 🇺🇾\n` +
+          `• Argentina 🇦🇷\n` +
+          `• Chile 🇨🇱\n` +
           `• Reino Unido 🇬🇧\n` +
           `• Europa 🇪🇺`
         : `✅ Sending *$${amount} USD*\n\n` +
@@ -457,6 +481,10 @@ async function handleIdleState(from: string, text: string, session: UserSession)
           `• Mexico 🇲🇽\n` +
           `• Colombia 🇨🇴\n` +
           `• Brazil 🇧🇷\n` +
+          `• Costa Rica 🇨🇷\n` +
+          `• Uruguay 🇺🇾\n` +
+          `• Argentina 🇦🇷\n` +
+          `• Chile 🇨🇱\n` +
           `• United Kingdom 🇬🇧\n` +
           `• Europe 🇪🇺`;
       await sendWhatsAppMessage(from, message);
@@ -526,6 +554,10 @@ async function handleCollectingAmount(from: string, text: string, session: UserS
         `• México 🇲🇽\n` +
         `• Colombia 🇨🇴\n` +
         `• Brasil 🇧🇷\n` +
+        `• Costa Rica 🇨🇷\n` +
+        `• Uruguay 🇺🇾\n` +
+        `• Argentina 🇦🇷\n` +
+        `• Chile 🇨🇱\n` +
         `• Reino Unido 🇬🇧\n` +
         `• Europa 🇪🇺`
       : `✅ Sending *$${amount} USD*\n\n` +
@@ -533,6 +565,10 @@ async function handleCollectingAmount(from: string, text: string, session: UserS
         `• Mexico 🇲🇽\n` +
         `• Colombia 🇨🇴\n` +
         `• Brazil 🇧🇷\n` +
+        `• Costa Rica 🇨🇷\n` +
+        `• Uruguay 🇺🇾\n` +
+        `• Argentina 🇦🇷\n` +
+        `• Chile 🇨🇱\n` +
         `• United Kingdom 🇬🇧\n` +
         `• Europe 🇪🇺`;
     await sendWhatsAppMessage(from, message);

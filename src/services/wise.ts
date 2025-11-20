@@ -186,12 +186,16 @@ export class WiseService {
     reference?: string;
     phoneNumber?: string;
     idDocumentNumber?: string;
+    idDocumentType?: string;
     address?: string;
     city?: string;
     postCode?: string;
     accountType?: string;
     cpf?: string;
     bankCode?: string;
+    taxId?: string;
+    rut?: string;
+    IBAN?: string;
   }) {
     try {
       // Step 1: Create quote
@@ -256,6 +260,73 @@ export class WiseService {
             idDocumentNumber: params.idDocumentNumber,
             address: {
               country: 'CO',
+              city: params.city,
+              firstLine: params.address,
+              postCode: params.postCode
+            }
+          };
+          break;
+
+        case 'CRC': // Costa Rica
+          recipientType = 'costa_rica';
+          recipientDetails = {
+            legalType: 'PRIVATE',
+            IBAN: params.IBAN || params.recipientBankAccount,
+            idDocumentType: params.idDocumentType || 'NATIONAL_ID_CARD',
+            idDocumentNumber: params.idDocumentNumber,
+            address: {
+              country: 'CR',
+              city: params.city,
+              firstLine: params.address,
+              postCode: params.postCode
+            }
+          };
+          break;
+
+        case 'UYU': // Uruguay
+          recipientType = 'uruguay';
+          recipientDetails = {
+            legalType: 'PRIVATE',
+            accountType: params.accountType?.toUpperCase() || 'CHECKING',
+            accountNumber: params.recipientBankAccount,
+            idDocumentType: params.idDocumentType || 'NATIONAL_ID',
+            idDocumentNumber: params.idDocumentNumber,
+            bankCode: params.bankCode,
+            address: {
+              country: 'UY',
+              city: params.city,
+              firstLine: params.address,
+              postCode: params.postCode
+            }
+          };
+          break;
+
+        case 'ARS': // Argentina
+          recipientType = 'argentina';
+          recipientDetails = {
+            legalType: 'PRIVATE',
+            accountNumber: params.recipientBankAccount,
+            taxId: params.taxId,
+            address: {
+              country: 'AR',
+              city: params.city,
+              firstLine: params.address,
+              postCode: params.postCode
+            }
+          };
+          break;
+
+        case 'CLP': // Chile
+          recipientType = 'chile';
+          recipientDetails = {
+            legalType: 'PRIVATE',
+            bankCode: params.bankCode,
+            accountNumber: params.recipientBankAccount,
+            rut: params.rut,
+            accountType: params.accountType?.toUpperCase() || 'CHECKING',
+            phoneNumber: params.phoneNumber,
+            address: {
+              country: 'CL',
               city: params.city,
               firstLine: params.address,
               postCode: params.postCode

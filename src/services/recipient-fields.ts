@@ -186,6 +186,262 @@ export const COUNTRY_BANK_REQUIREMENTS: Record<string, CountryBankRequirements> 
     ],
     instructions: 'For Colombia, we need the recipient\'s bank account number, account type (CURRENT for checking or SAVINGS), phone number, Cédula number (Colombian national ID), and complete address (city, street address, and postal code). Note: In Wise sandbox, only Bancolombia bank is supported for testing.'
   },
+
+  // Costa Rica
+  'CRC': {
+    country: 'Costa Rica',
+    currency: 'CRC',
+    accountType: 'costa_rica',
+    fields: [
+      {
+        name: 'IBAN',
+        label: 'IBAN',
+        description: 'Costa Rican IBAN (22 characters)',
+        required: true,
+        example: 'CR95015114920010169410',
+        aliases: ['IBAN', 'International Bank Account Number', 'Número de cuenta IBAN']
+      },
+      {
+        name: 'idDocumentType',
+        label: 'ID Document Type',
+        description: 'National ID, Foreigner ID, or Business ID',
+        required: true,
+        example: 'NATIONAL_ID_CARD',
+        aliases: ['ID type', 'Document type', 'Tipo de documento']
+      },
+      {
+        name: 'idDocumentNumber',
+        label: 'ID Number',
+        description: 'Identification number (Cédula)',
+        required: true,
+        example: '901270245',
+        aliases: ['ID number', 'Cédula', 'Cedula', 'Document number', 'Número de identificación']
+      },
+      {
+        name: 'city',
+        label: 'City',
+        description: 'City where recipient lives',
+        required: true,
+        example: 'San José',
+        aliases: ['City', 'Ciudad']
+      },
+      {
+        name: 'address',
+        label: 'Street Address',
+        description: 'Recipient\'s street address',
+        required: true,
+        example: 'Avenida Central 123',
+        aliases: ['Address', 'Street address', 'Dirección', 'Direccion']
+      },
+      {
+        name: 'postCode',
+        label: 'Post Code',
+        description: 'Postal code',
+        required: true,
+        example: '10101',
+        aliases: ['Post code', 'Postcode', 'Postal code', 'Zip code', 'Zip', 'Código postal', 'Codigo postal']
+      }
+    ],
+    instructions: 'For Costa Rica, we need the recipient\'s IBAN (22 characters), ID document type (National ID, Foreigner ID, or Business ID), ID number (Cédula), and complete address (city, street address, and postal code).'
+  },
+
+  // Uruguay
+  'UYU': {
+    country: 'Uruguay',
+    currency: 'UYU',
+    accountType: 'uruguay',
+    fields: [
+      {
+        name: 'accountType',
+        label: 'Account Type',
+        description: 'CHECKING or SAVINGS',
+        required: true,
+        example: 'CHECKING',
+        aliases: ['Account type', 'Type', 'Tipo de cuenta', 'Checking', 'Savings', 'Corriente', 'Ahorro']
+      },
+      {
+        name: 'accountNumber',
+        label: 'Account Number',
+        description: 'Bank account number (up to 20 digits)',
+        required: true,
+        example: '265487900',
+        aliases: ['Account number', 'Account', 'Número de cuenta', 'Numero de cuenta', 'Cuenta']
+      },
+      {
+        name: 'idDocumentType',
+        label: 'ID Document Type',
+        description: 'National ID or Tax ID (RUT/RUC)',
+        required: true,
+        example: 'NATIONAL_ID',
+        aliases: ['ID type', 'Document type', 'Tipo de documento']
+      },
+      {
+        name: 'idDocumentNumber',
+        label: 'ID Number',
+        description: 'Cédula de Identidad or RUT/RUC',
+        required: true,
+        example: '12345678',
+        aliases: ['ID number', 'Cédula', 'Cedula', 'RUT', 'RUC', 'Document number', 'Número de identificación']
+      },
+      {
+        name: 'bankCode',
+        label: 'Bank Code',
+        description: 'Bank identifier code',
+        required: true,
+        example: '001',
+        aliases: ['Bank code', 'Bank', 'Código del banco', 'Codigo del banco', 'Banco']
+      },
+      {
+        name: 'city',
+        label: 'City',
+        description: 'City where recipient lives',
+        required: true,
+        example: 'Montevideo',
+        aliases: ['City', 'Ciudad']
+      },
+      {
+        name: 'address',
+        label: 'Street Address',
+        description: 'Recipient\'s street address',
+        required: true,
+        example: 'Avenida 18 de Julio 1234',
+        aliases: ['Address', 'Street address', 'Dirección', 'Direccion']
+      },
+      {
+        name: 'postCode',
+        label: 'Post Code',
+        description: 'Postal code',
+        required: true,
+        example: '11200',
+        aliases: ['Post code', 'Postcode', 'Postal code', 'Zip code', 'Zip', 'Código postal', 'Codigo postal']
+      }
+    ],
+    instructions: 'For Uruguay, we need the recipient\'s account type (checking or savings), account number, ID type (National ID or Tax ID), ID number (Cédula or RUT/RUC), bank code, and complete address (city, street address, and postal code).'
+  },
+
+  // Argentina
+  'ARS': {
+    country: 'Argentina',
+    currency: 'ARS',
+    accountType: 'argentina',
+    fields: [
+      {
+        name: 'accountNumber',
+        label: 'CBU',
+        description: 'Argentine bank account number (CBU - 22 digits)',
+        required: true,
+        example: '0170099220000067797370',
+        aliases: ['CBU', 'Account number', 'Número de cuenta', 'Numero de cuenta', 'Clave Bancaria Uniforme']
+      },
+      {
+        name: 'taxId',
+        label: 'CUIL/CUIT',
+        description: 'Argentine tax ID (CUIL or CUIT - 11 digits)',
+        required: true,
+        example: '20084908488',
+        aliases: ['CUIL', 'CUIT', 'Tax ID', 'Número de identificación tributaria', 'Numero de identificacion tributaria']
+      },
+      {
+        name: 'city',
+        label: 'City',
+        description: 'City where recipient lives',
+        required: true,
+        example: 'Buenos Aires',
+        aliases: ['City', 'Ciudad']
+      },
+      {
+        name: 'address',
+        label: 'Street Address',
+        description: 'Recipient\'s street address',
+        required: true,
+        example: 'Avenida 9 de Julio 1234',
+        aliases: ['Address', 'Street address', 'Dirección', 'Direccion']
+      },
+      {
+        name: 'postCode',
+        label: 'Post Code',
+        description: 'Postal code',
+        required: true,
+        example: 'C1043',
+        aliases: ['Post code', 'Postcode', 'Postal code', 'Zip code', 'Zip', 'Código postal', 'Codigo postal']
+      }
+    ],
+    instructions: 'For Argentina, we need the recipient\'s CBU (22-digit bank account number), CUIL/CUIT (11-digit tax ID), and complete address (city, street address, and postal code).'
+  },
+
+  // Chile
+  'CLP': {
+    country: 'Chile',
+    currency: 'CLP',
+    accountType: 'chile',
+    fields: [
+      {
+        name: 'bankCode',
+        label: 'Bank Code',
+        description: 'Chilean bank identifier',
+        required: true,
+        example: '001',
+        aliases: ['Bank code', 'Bank', 'Código del banco', 'Codigo del banco', 'Banco']
+      },
+      {
+        name: 'accountNumber',
+        label: 'Account Number',
+        description: 'Bank account number (4-20 digits)',
+        required: true,
+        example: '12345678901234567890',
+        aliases: ['Account number', 'Account', 'Número de cuenta', 'Numero de cuenta', 'Cuenta']
+      },
+      {
+        name: 'rut',
+        label: 'RUT',
+        description: 'Chilean tax ID (Rol Único Tributario)',
+        required: true,
+        example: '760864285',
+        aliases: ['RUT', 'Rol Único Tributario', 'Tax ID', 'Número de identificación']
+      },
+      {
+        name: 'accountType',
+        label: 'Account Type',
+        description: 'CHECKING, SAVINGS, or CUENTA_VISTA',
+        required: true,
+        example: 'CHECKING',
+        aliases: ['Account type', 'Type', 'Tipo de cuenta', 'Checking', 'Savings', 'Cuenta corriente', 'Cuenta de ahorro', 'Cuenta vista']
+      },
+      {
+        name: 'phoneNumber',
+        label: 'Phone Number',
+        description: 'Chilean phone number (7-20 digits)',
+        required: true,
+        example: '+56 33 555 5555',
+        aliases: ['Phone', 'Phone number', 'Teléfono', 'Telefono']
+      },
+      {
+        name: 'city',
+        label: 'City',
+        description: 'City where recipient lives',
+        required: true,
+        example: 'Santiago',
+        aliases: ['City', 'Ciudad']
+      },
+      {
+        name: 'address',
+        label: 'Street Address',
+        description: 'Recipient\'s street address',
+        required: true,
+        example: 'Avenida Libertador 1234',
+        aliases: ['Address', 'Street address', 'Dirección', 'Direccion']
+      },
+      {
+        name: 'postCode',
+        label: 'Post Code',
+        description: 'Postal code',
+        required: true,
+        example: '8320000',
+        aliases: ['Post code', 'Postcode', 'Postal code', 'Zip code', 'Zip', 'Código postal', 'Codigo postal']
+      }
+    ],
+    instructions: 'For Chile, we need the recipient\'s bank code, account number, RUT (tax ID), account type (checking, savings, or demand account), phone number, and complete address (city, street address, and postal code).'
+  },
 };
 
 /**

@@ -94,9 +94,9 @@ export async function callOpenAI(
       ? `Eres un asistente de soporte para el BOT DE WHATSAPP de MyBambu.
 
 IMPORTANTE - ESTE BOT ESPECÍFICO:
-- Este bot de WhatsApp solo soporta 5 países: México 🇲🇽, Colombia 🇨🇴, Brasil 🇧🇷, Reino Unido 🇬🇧, Europa 🇪🇺
+- Este bot de WhatsApp soporta 9 países: México 🇲🇽, Colombia 🇨🇴, Brasil 🇧🇷, Costa Rica 🇨🇷, Uruguay 🇺🇾, Argentina 🇦🇷, Chile 🇨🇱, Reino Unido 🇬🇧, Europa 🇪🇺
 - Usa la API de Wise para estas transferencias
-- Si preguntan por otros países latinoamericanos: "Este bot de WhatsApp solo maneja México, Colombia y Brasil. Para otros países, usa la app principal de MyBambu"
+- Si preguntan por otros países latinoamericanos (como Perú, Ecuador, etc.): "Este bot de WhatsApp solo maneja estos 7 países de América Latina. Para otros países, usa la app principal de MyBambu"
 
 NOTA: La base de conocimiento menciona 13 países - eso es para MyBambu en general (otros servicios). Este bot de WhatsApp es específico.
 
@@ -109,9 +109,9 @@ Para empezar: "Enviar $100 a México"`
       : `You are a support agent for the MyBambu WHATSAPP BOT.
 
 IMPORTANT - THIS SPECIFIC BOT:
-- This WhatsApp bot only supports 5 countries: Mexico 🇲🇽, Colombia 🇨🇴, Brazil 🇧🇷, UK 🇬🇧, Europe 🇪🇺
+- This WhatsApp bot supports 9 countries: Mexico 🇲🇽, Colombia 🇨🇴, Brazil 🇧🇷, Costa Rica 🇨🇷, Uruguay 🇺🇾, Argentina 🇦🇷, Chile 🇨🇱, UK 🇬🇧, Europe 🇪🇺
 - Uses Wise API for these transfers
-- If asked about other Latin American countries: "This WhatsApp bot only handles Mexico, Colombia, and Brazil. For other countries, use the main MyBambu app"
+- If asked about other Latin American countries (like Peru, Ecuador, etc.): "This WhatsApp bot only handles these 7 Latin America countries. For other countries, use the main MyBambu app"
 
 NOTE: Knowledge base mentions 13 countries - that's for MyBambu in general (other services). This WhatsApp bot is specific.
 
@@ -166,12 +166,28 @@ To start: "Send $100 to Mexico"`;
       include: ['web_search_call.action.sources' as any]
     });
 
-    const aiResponse = response.output?.[0]?.content ||
-      (language === 'es'
-        ? 'Lo siento, no pude procesar tu mensaje. ¿Puedes intentar de nuevo?'
-        : "Sorry, I couldn't process your message. Can you try again?");
+    // Extract content from response output
+    const firstOutput: any = response.output?.[0];
+    let aiResponse: string;
 
-    return typeof aiResponse === 'string' ? aiResponse.trim() : String(aiResponse).trim();
+    if (firstOutput && firstOutput.content) {
+      const content = firstOutput.content;
+      if (typeof content === 'string') {
+        aiResponse = content;
+      } else if (Array.isArray(content) && content.length > 0) {
+        // Handle array of content blocks
+        const textContent = content.find((c: any) => c.type === 'text');
+        aiResponse = textContent?.text || String(content[0]);
+      } else {
+        aiResponse = String(content);
+      }
+    } else {
+      aiResponse = language === 'es'
+        ? 'Lo siento, no pude procesar tu mensaje. ¿Puedes intentar de nuevo?'
+        : "Sorry, I couldn't process your message. Can you try again?";
+    }
+
+    return aiResponse.trim();
 
   } catch (error: any) {
     console.error('❌ OpenAI Error:', error.message);
@@ -209,6 +225,10 @@ export const COUNTRY_NAMES: Record<string, { en: string; es: string; flag: strin
   'MXN': { en: 'Mexico', es: 'México', flag: '🇲🇽' },
   'COP': { en: 'Colombia', es: 'Colombia', flag: '🇨🇴' },
   'BRL': { en: 'Brazil', es: 'Brasil', flag: '🇧🇷' },
+  'CRC': { en: 'Costa Rica', es: 'Costa Rica', flag: '🇨🇷' },
+  'UYU': { en: 'Uruguay', es: 'Uruguay', flag: '🇺🇾' },
+  'ARS': { en: 'Argentina', es: 'Argentina', flag: '🇦🇷' },
+  'CLP': { en: 'Chile', es: 'Chile', flag: '🇨🇱' },
   'GBP': { en: 'United Kingdom', es: 'Reino Unido', flag: '🇬🇧' },
   'EUR': { en: 'Europe', es: 'Europa', flag: '🇪🇺' },
 };
