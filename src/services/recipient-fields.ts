@@ -319,56 +319,6 @@ export const COUNTRY_BANK_REQUIREMENTS: Record<string, CountryBankRequirements> 
     instructions: 'For Uruguay, we need the recipient\'s account type (checking or savings), account number, ID type (National ID or Tax ID), ID number (Cédula or RUT/RUC), bank code, and complete address (city, street address, and postal code).'
   },
 
-  // Argentina
-  'ARS': {
-    country: 'Argentina',
-    currency: 'ARS',
-    accountType: 'argentina',
-    fields: [
-      {
-        name: 'accountNumber',
-        label: 'CBU',
-        description: 'Argentine bank account number (CBU - 22 digits)',
-        required: true,
-        example: '0170099220000067797370',
-        aliases: ['CBU', 'Account number', 'Número de cuenta', 'Numero de cuenta', 'Clave Bancaria Uniforme']
-      },
-      {
-        name: 'taxId',
-        label: 'CUIL/CUIT',
-        description: 'Argentine tax ID (CUIL or CUIT - 11 digits)',
-        required: true,
-        example: '20084908488',
-        aliases: ['CUIL', 'CUIT', 'Tax ID', 'Número de identificación tributaria', 'Numero de identificacion tributaria']
-      },
-      {
-        name: 'city',
-        label: 'City',
-        description: 'City where recipient lives',
-        required: true,
-        example: 'Buenos Aires',
-        aliases: ['City', 'Ciudad']
-      },
-      {
-        name: 'address',
-        label: 'Street Address',
-        description: 'Recipient\'s street address',
-        required: true,
-        example: 'Avenida 9 de Julio 1234',
-        aliases: ['Address', 'Street address', 'Dirección', 'Direccion']
-      },
-      {
-        name: 'postCode',
-        label: 'Post Code',
-        description: 'Postal code',
-        required: true,
-        example: 'C1043',
-        aliases: ['Post code', 'Postcode', 'Postal code', 'Zip code', 'Zip', 'Código postal', 'Codigo postal']
-      }
-    ],
-    instructions: 'For Argentina, we need the recipient\'s CBU (22-digit bank account number), CUIL/CUIT (11-digit tax ID), and complete address (city, street address, and postal code).'
-  },
-
   // Chile
   'CLP': {
     country: 'Chile',

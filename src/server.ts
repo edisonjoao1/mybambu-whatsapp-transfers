@@ -62,7 +62,6 @@ const TRANSFER_CORRIDORS: Record<string, any> = {
   'brasil': { country: 'Brazil', currency: 'BRL', deliveryTime: '1-3 business days' },
   'costa rica': { country: 'Costa Rica', currency: 'CRC', deliveryTime: '1-3 business days' },
   'uruguay': { country: 'Uruguay', currency: 'UYU', deliveryTime: '1-3 business days' },
-  'argentina': { country: 'Argentina', currency: 'ARS', deliveryTime: '1-3 business days' },
   'chile': { country: 'Chile', currency: 'CLP', deliveryTime: '1-3 business days' },
   'uk': { country: 'United Kingdom', currency: 'GBP', deliveryTime: 'Same day' },
   'united kingdom': { country: 'United Kingdom', currency: 'GBP', deliveryTime: 'Same day' },
@@ -339,7 +338,6 @@ async function handleIncomingMessage(from: string, text: string) {
         '• Brasil 🇧🇷\n' +
         '• Costa Rica 🇨🇷\n' +
         '• Uruguay 🇺🇾\n' +
-        '• Argentina 🇦🇷\n' +
         '• Chile 🇨🇱\n' +
         '• Reino Unido 🇬🇧\n' +
         '• Europa 🇪🇺\n\n' +
@@ -402,13 +400,12 @@ async function handleIdleState(from: string, text: string, session: UserSession)
     const message = isSpanish
       ? '👋 *¡Hola! Bienvenido a MyBambu*\n\n' +
         'Envía dinero a tus seres queridos con las mejores tasas del mercado. Rápido, seguro y fácil.\n\n' +
-        '🌎 *Enviamos a 9 países:*\n' +
+        '🌎 *Enviamos a 8 países:*\n' +
         '• México 🇲🇽\n' +
         '• Colombia 🇨🇴\n' +
         '• Brasil 🇧🇷\n' +
         '• Costa Rica 🇨🇷\n' +
         '• Uruguay 🇺🇾\n' +
-        '• Argentina 🇦🇷\n' +
         '• Chile 🇨🇱\n' +
         '• Reino Unido 🇬🇧\n' +
         '• Europa 🇪🇺\n\n' +
@@ -420,13 +417,12 @@ async function handleIdleState(from: string, text: string, session: UserSession)
         '¡Empecemos! 🚀'
       : '👋 *Hi! Welcome to MyBambu*\n\n' +
         'Send money to your loved ones with the best rates on the market. Fast, secure, and easy.\n\n' +
-        '🌎 *We send to 9 countries:*\n' +
+        '🌎 *We send to 8 countries:*\n' +
         '• Mexico 🇲🇽\n' +
         '• Colombia 🇨🇴\n' +
         '• Brazil 🇧🇷\n' +
         '• Costa Rica 🇨🇷\n' +
         '• Uruguay 🇺🇾\n' +
-        '• Argentina 🇦🇷\n' +
         '• Chile 🇨🇱\n' +
         '• United Kingdom 🇬🇧\n' +
         '• Europe 🇪🇺\n\n' +
@@ -491,7 +487,6 @@ async function handleIdleState(from: string, text: string, session: UserSession)
           `• Brasil 🇧🇷\n` +
           `• Costa Rica 🇨🇷\n` +
           `• Uruguay 🇺🇾\n` +
-          `• Argentina 🇦🇷\n` +
           `• Chile 🇨🇱\n` +
           `• Reino Unido 🇬🇧\n` +
           `• Europa 🇪🇺`
@@ -502,7 +497,6 @@ async function handleIdleState(from: string, text: string, session: UserSession)
           `• Brazil 🇧🇷\n` +
           `• Costa Rica 🇨🇷\n` +
           `• Uruguay 🇺🇾\n` +
-          `• Argentina 🇦🇷\n` +
           `• Chile 🇨🇱\n` +
           `• United Kingdom 🇬🇧\n` +
           `• Europe 🇪🇺`;
@@ -841,15 +835,6 @@ async function handleConfirmation(from: string, text: string, session: UserSessi
               idDocumentType: details.idDocumentType || 'NATIONAL_ID',
               idDocumentNumber: details.idDocumentNumber,
               bankCode: details.bankCode,
-              address: details.address,
-              city: details.city,
-              postCode: details.postCode
-            };
-            break;
-          case 'ARS': // Argentina
-            recipientBankAccount = details.accountNumber || '';
-            extraFields = {
-              taxId: details.taxId,
               address: details.address,
               city: details.city,
               postCode: details.postCode

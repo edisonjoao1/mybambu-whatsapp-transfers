@@ -301,21 +301,6 @@ export class WiseService {
           };
           break;
 
-        case 'ARS': // Argentina
-          recipientType = 'argentina';
-          recipientDetails = {
-            legalType: 'PRIVATE',
-            accountNumber: params.recipientBankAccount,
-            taxId: params.taxId,
-            address: {
-              country: 'AR',
-              city: params.city,
-              firstLine: params.address,
-              postCode: params.postCode
-            }
-          };
-          break;
-
         case 'CLP': // Chile
           recipientType = 'chile';
           recipientDetails = {
