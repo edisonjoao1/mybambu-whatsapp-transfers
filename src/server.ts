@@ -240,7 +240,8 @@ function extractAmount(text: string): number | null {
     /\$\s*(\d+(?:\.\d{2})?)/,  // $100 or $100.00
     /(\d+(?:\.\d{2})?)\s*(?:dollars|usd|USD|dólares|dolares)/i,  // 100 dollars
     /(?:send|enviar|transferir|mandar)\s+\$?(\d+(?:\.\d{2})?)/i,  // send/enviar 100
-    /\$?(\d+(?:\.\d{2})?)\s+(?:to|a|para)\s+/i  // 100 to Colombia / 100 a Colombia
+    /\$?(\d+(?:\.\d{2})?)\s+(?:to|a|para)\s+/i,  // 100 to Colombia / 100 a Colombia
+    /^\s*(\d+(?:\.\d{2})?)\s*$/  // Just a number: "100" or "10"
   ];
 
   for (const pattern of patterns) {
@@ -505,20 +506,32 @@ async function handleIdleState(from: string, text: string, session: UserSession)
 
 async function handleCollectingAmount(from: string, text: string, session: UserSession) {
   const amount = extractAmount(text);
+  const isSpanish = session.language === 'es';
+
   if (amount && amount >= 1 && amount <= 10000) {
     session.amount = amount;
     session.step = 'collecting_country';
-    await sendWhatsAppMessage(from,
-      `✅ Sending *$${amount} USD*\n\n` +
-      `🌎 Which country?\n` +
-      `• Mexico\n` +
-      `• Colombia\n` +
-      `• Brazil\n` +
-      `• United Kingdom\n` +
-      `• Europe`
-    );
+    const message = isSpanish
+      ? `✅ Enviando *$${amount} USD*\n\n` +
+        `🌎 ¿A qué país?\n` +
+        `• México 🇲🇽\n` +
+        `• Colombia 🇨🇴\n` +
+        `• Brasil 🇧🇷\n` +
+        `• Reino Unido 🇬🇧\n` +
+        `• Europa 🇪🇺`
+      : `✅ Sending *$${amount} USD*\n\n` +
+        `🌎 Which country?\n` +
+        `• Mexico 🇲🇽\n` +
+        `• Colombia 🇨🇴\n` +
+        `• Brazil 🇧🇷\n` +
+        `• United Kingdom 🇬🇧\n` +
+        `• Europe 🇪🇺`;
+    await sendWhatsAppMessage(from, message);
   } else {
-    await sendWhatsAppMessage(from, '❌ Please enter a valid amount between $1 and $10,000\n\nExample: "$100" or "100"');
+    const message = isSpanish
+      ? '❌ Por favor ingresa una cantidad válida entre $1 y $10,000\n\nEjemplo: "$100" o "100"'
+      : '❌ Please enter a valid amount between $1 and $10,000\n\nExample: "$100" or "100"';
+    await sendWhatsAppMessage(from, message);
   }
 }
 
@@ -558,8 +571,14 @@ async function handleCollectingCountry(from: string, text: string, session: User
 }
 
 async function handleCollectingRecipient(from: string, text: string, session: UserSession) {
-  if (text.trim().length >= 3) {
-    session.recipientName = text.trim();
+  const isSpanish = session.language === 'es';
+  const name = text.trim();
+
+  // Validate name has at least 2 words (first + last name) for Wise API
+  const nameParts = name.split(/\s+/).filter(part => part.length > 0);
+
+  if (nameParts.length >= 2 && name.length >= 3) {
+    session.recipientName = name;
     session.step = 'collecting_bank_details';
     session.bankDetails = {};
 
@@ -569,18 +588,29 @@ async function handleCollectingRecipient(from: string, text: string, session: Us
         .map(f => `• *${f.label}*: ${f.description}\n  Example: ${f.example}`)
         .join('\n\n');
 
-      await sendWhatsAppMessage(from,
-        `✅ Recipient: *${session.recipientName}*\n\n` +
-        `📋 Now I need their bank details:\n\n` +
-        `${fieldsText}\n\n` +
-        `ℹ️ Send them one at a time or all together.`
-      );
+      const message = isSpanish
+        ? `✅ Destinatario: *${session.recipientName}*\n\n` +
+          `📋 Ahora necesito sus datos bancarios:\n\n` +
+          `${fieldsText}\n\n` +
+          `ℹ️ Envíalos uno por uno o todos juntos.`
+        : `✅ Recipient: *${session.recipientName}*\n\n` +
+          `📋 Now I need their bank details:\n\n` +
+          `${fieldsText}\n\n` +
+          `ℹ️ Send them one at a time or all together.`;
+
+      await sendWhatsAppMessage(from, message);
     } else {
-      await sendWhatsAppMessage(from, '❌ Error: Unsupported currency');
+      const message = isSpanish
+        ? '❌ Error: Moneda no soportada'
+        : '❌ Error: Unsupported currency';
+      await sendWhatsAppMessage(from, message);
       session.step = 'idle';
     }
   } else {
-    await sendWhatsAppMessage(from, '❌ Please enter the recipient\'s full name (at least 3 characters)');
+    const message = isSpanish
+      ? '❌ Por favor ingresa el nombre completo del destinatario (nombre y apellido)\n\nEjemplo: "Juan Pérez" o "María García"'
+      : '❌ Please enter the recipient\'s full name (first and last name)\n\nExample: "John Smith" or "Jane Doe"';
+    await sendWhatsAppMessage(from, message);
   }
 }
 
