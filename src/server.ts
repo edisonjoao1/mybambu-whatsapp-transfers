@@ -319,6 +319,7 @@ async function handleIncomingMessage(from: string, text: string) {
     session.step = 'idle';
     session.amount = undefined;
     session.country = undefined;
+    session.currency = undefined;
     session.recipientName = undefined;
     session.bankDetails = undefined;
     const message = session.language === 'es'
@@ -524,7 +525,8 @@ async function handleIdleState(from: string, text: string, session: UserSession)
       amount: session.amount,
       country: session.country,
       currency: session.currency,
-      recipientName: session.recipientName
+      recipientName: session.recipientName,
+      bankDetails: session.bankDetails
     };
 
     const aiResponse = await callOpenAI(text, {
@@ -535,6 +537,7 @@ async function handleIdleState(from: string, text: string, session: UserSession)
       transferDetails: transferDetails
     });
     await sendWhatsAppMessage(from, aiResponse);
+    addToConversationHistory(session, 'bot', aiResponse);
   } catch (error) {
     console.error('❌ AI fallback failed:', error);
     // Final fallback
@@ -550,6 +553,7 @@ async function handleIdleState(from: string, text: string, session: UserSession)
         '• "Check rate to Colombia"\n' +
         '• "Help"';
     await sendWhatsAppMessage(from, message);
+    addToConversationHistory(session, 'bot', message);
   }
 }
 
@@ -897,6 +901,7 @@ async function handleConfirmation(from: string, text: string, session: UserSessi
       session.step = 'idle';
       session.amount = undefined;
       session.country = undefined;
+      session.currency = undefined;
       session.recipientName = undefined;
       session.bankDetails = undefined;
 
