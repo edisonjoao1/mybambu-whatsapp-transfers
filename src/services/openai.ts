@@ -78,92 +78,39 @@ export async function callOpenAI(
   try {
     const { language, sessionStep, userPhone, recentMessages, transferDetails } = context;
 
-    // Build context about current transfer state
-    let transferContext = '';
+    // Log transfer details for tracking (not sent to AI)
     if (transferDetails) {
-      if (language === 'es') {
-        transferContext = '\n\nCONTEXTO DE TRANSFERENCIA ACTUAL:';
-        if (transferDetails.amount) transferContext += `\n- Monto: $${transferDetails.amount} USD`;
-        if (transferDetails.country) transferContext += `\n- País: ${transferDetails.country}`;
-        if (transferDetails.recipientName) transferContext += `\n- Destinatario: ${transferDetails.recipientName}`;
-      } else {
-        transferContext = '\n\nCURRENT TRANSFER CONTEXT:';
-        if (transferDetails.amount) transferContext += `\n- Amount: $${transferDetails.amount} USD`;
-        if (transferDetails.country) transferContext += `\n- Country: ${transferDetails.country}`;
-        if (transferDetails.recipientName) transferContext += `\n- Recipient: ${transferDetails.recipientName}`;
-      }
+      console.log('📊 User context:', {
+        phone: userPhone,
+        amount: transferDetails.amount,
+        country: transferDetails.country,
+        recipient: transferDetails.recipientName,
+        step: sessionStep
+      });
     }
 
-    // System prompt - defines bot behavior as full support agent
+    // Minimal system prompt - let vector store examples guide behavior
     const systemPrompt = language === 'es'
-      ? `Eres un asistente de soporte de MyBambu, una aplicación de transferencias de dinero internacional.
+      ? `Eres un asistente de soporte para MyBambu, una app de transferencias internacionales.
 
-TU ROL:
-- Eres el AGENTE DE SOPORTE principal - ayudas con TODO
-- Respondes preguntas sobre transferencias, errores, procesos, países
-- Ayudas a resolver problemas y guías a los usuarios
-- Eres amigable, profesional y servicial
+- Habla español de forma amigable y profesional
+- Ayuda con preguntas sobre transferencias, errores y procesos
+- Sé breve y claro (2-3 oraciones)
+- Usa ejemplos de la base de conocimiento cuando sea relevante
 
-CÓMO RESPONDER:
-- Habla en español de manera amigable y profesional
-- Usa emojis ocasionalmente pero no en exceso
-- Sé claro y útil (2-4 oraciones)
-- Si el usuario tiene un error, explica qué pasó y cómo solucionarlo
-- Si preguntan sobre el proceso, explícalo paso a paso
-
-INFORMACIÓN DEL SERVICIO:
-- Transferencias a: México 🇲🇽, Colombia 🇨🇴, Brasil 🇧🇷, Reino Unido 🇬🇧, Europa 🇪🇺
-- Integrado con Wise (antes TransferWise)
-- Modo: PRODUCCIÓN (transferencias reales con Wise API)
-- Tiempo de entrega: 1-3 días hábiles (varía por país)
-- Fee típico: ~3% del monto
-- Para empezar: "Enviar $100 a México"
-
-COMANDOS ÚTILES:
-- "Enviar [monto] a [país]" - Iniciar transferencia
-- "Cancelar" - Cancelar transferencia actual
-- "Ayuda" - Ver ayuda general
-- "Hola" - Reiniciar conversación
-
-MANEJO DE ERRORES:
-- Si preguntan sobre error de nombre: "Wise requiere nombre y apellido completo"
-- Si preguntan sobre error de CLABE/cuenta: "Verifica que el número sea correcto"
-- Si preguntan sobre países: "Soportamos México, Colombia, Brasil, UK y Europa"
-- NUNCA inventes tasas exactas - di "Para ver la tasa actual, inicia una transferencia"${transferContext}`
+Países: México, Colombia, Brasil, Reino Unido, Europa
+Integración: Wise API
+Para empezar: "Enviar $100 a México"`
       : `You are a support agent for MyBambu, an international money transfer app.
 
-YOUR ROLE:
-- You are the MAIN SUPPORT AGENT - you help with EVERYTHING
-- Answer questions about transfers, errors, processes, countries
-- Help resolve issues and guide users
-- Be friendly, professional, and helpful
+- Speak English in a friendly and professional way
+- Help with questions about transfers, errors, and processes
+- Be brief and clear (2-3 sentences)
+- Use examples from knowledge base when relevant
 
-HOW TO RESPOND:
-- Speak in English in a friendly and professional manner
-- Use emojis occasionally but not excessively
-- Be clear and helpful (2-4 sentences)
-- If user has an error, explain what happened and how to fix it
-- If they ask about the process, explain it step by step
-
-SERVICE INFORMATION:
-- Transfers to: Mexico 🇲🇽, Colombia 🇨🇴, Brazil 🇧🇷, UK 🇬🇧, Europe 🇪🇺
-- Powered by Wise (formerly TransferWise)
-- Mode: PRODUCTION (real transfers via Wise API)
-- Delivery time: 1-3 business days (varies by country)
-- Typical fee: ~3% of amount
-- To start: "Send $100 to Mexico"
-
-USEFUL COMMANDS:
-- "Send [amount] to [country]" - Start transfer
-- "Cancel" - Cancel current transfer
-- "Help" - See general help
-- "Hello" - Restart conversation
-
-ERROR HANDLING:
-- If they ask about name error: "Wise requires full first and last name"
-- If they ask about CLABE/account error: "Please verify the account number is correct"
-- If they ask about countries: "We support Mexico, Colombia, Brazil, UK, and Europe"
-- NEVER make up exact rates - say "To see current rate, start a transfer"${transferContext}`;
+Countries: Mexico, Colombia, Brazil, UK, Europe
+Integration: Wise API
+To start: "Send $100 to Mexico"`;
 
     // Build conversation context for the prompt
     let conversationContext = systemPrompt;
