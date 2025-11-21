@@ -326,6 +326,7 @@ async function handleIncomingMessage(from: string, text: string) {
       ? '🔄 Transferencia cancelada. Escribe "hola" para empezar de nuevo.'
       : '🔄 Transfer cancelled. Say "hello" to start again.';
     await sendWhatsAppMessage(from, message);
+    addToConversationHistory(session, 'bot', message);
     return;
   }
 
@@ -359,6 +360,7 @@ async function handleIncomingMessage(from: string, text: string) {
         '• "Send money to my family"\n\n' +
         'Say "cancel" anytime to stop.';
     await sendWhatsAppMessage(from, message);
+    addToConversationHistory(session, 'bot', message);
     return;
   }
 
@@ -433,6 +435,7 @@ async function handleIdleState(from: string, text: string, session: UserSession)
         '• "Transfer to my family"\n\n' +
         'Let\'s get started! 🚀';
     await sendWhatsAppMessage(from, message);
+    addToConversationHistory(session, 'bot', message);
     return;
   }
 
@@ -443,14 +446,16 @@ async function handleIdleState(from: string, text: string, session: UserSession)
       const corridor = Object.values(TRANSFER_CORRIDORS).find((c: any) => c.country === country);
       if (corridor) {
         const rate = EXCHANGE_RATES[corridor.currency];
-        await sendWhatsAppMessage(from,
-          `💱 *Exchange Rate*\n\n` +
+        const message = `💱 *Exchange Rate*\n\n` +
           `1 USD = ${rate} ${corridor.currency}\n\n` +
-          `Ready to send? Try "Send $100 to ${country}"`
-        );
+          `Ready to send? Try "Send $100 to ${country}"`;
+        await sendWhatsAppMessage(from, message);
+        addToConversationHistory(session, 'bot', message);
       }
     } else {
-      await sendWhatsAppMessage(from, '🌎 Which country? (Mexico, Colombia, Brazil, UK, or Europe)');
+      const message = '🌎 Which country? (Mexico, Colombia, Brazil, UK, or Europe)';
+      await sendWhatsAppMessage(from, message);
+      addToConversationHistory(session, 'bot', message);
     }
     return;
   }
@@ -476,6 +481,7 @@ async function handleIdleState(from: string, text: string, session: UserSession)
           `📝 What's the recipient's full name?`;
 
       await sendWhatsAppMessage(from, message);
+      addToConversationHistory(session, 'bot', message);
     } else if (amount) {
       session.amount = amount;
       session.step = 'collecting_country';
@@ -501,12 +507,14 @@ async function handleIdleState(from: string, text: string, session: UserSession)
           `• United Kingdom 🇬🇧\n` +
           `• Europe 🇪🇺`;
       await sendWhatsAppMessage(from, message);
+      addToConversationHistory(session, 'bot', message);
     } else {
       session.step = 'collecting_amount';
       const message = isSpanish
         ? '💰 ¿Cuánto quieres enviar? (en USD)\n\n' + getTransferExamples('es')
         : '💰 How much would you like to send? (in USD)\n\n' + getTransferExamples('en');
       await sendWhatsAppMessage(from, message);
+      addToConversationHistory(session, 'bot', message);
     }
     return;
   }
@@ -586,11 +594,13 @@ async function handleCollectingAmount(from: string, text: string, session: UserS
         `• United Kingdom 🇬🇧\n` +
         `• Europe 🇪🇺`;
     await sendWhatsAppMessage(from, message);
+    addToConversationHistory(session, 'bot', message);
   } else {
     const message = isSpanish
       ? '❌ Por favor ingresa una cantidad válida entre $1 y $10,000\n\nEjemplo: "$100" o "100"'
       : '❌ Please enter a valid amount between $1 and $10,000\n\nExample: "$100" or "100"';
     await sendWhatsAppMessage(from, message);
+    addToConversationHistory(session, 'bot', message);
   }
 }
 
@@ -611,21 +621,21 @@ async function handleCollectingCountry(from: string, text: string, session: User
     const rate = EXCHANGE_RATES[session.currency!];
     const estimated = (session.amount! * 0.97 * rate).toFixed(2); // Rough estimate with 3% fee
 
-    await sendWhatsAppMessage(from,
-      `✅ Destination: *${country}*\n` +
+    const message = `✅ Destination: *${country}*\n` +
       `💱 Rate: 1 USD = ${rate} ${session.currency}\n` +
       `📩 They'll receive: ~${estimated} ${session.currency}\n\n` +
-      `📝 What's the recipient's full name?`
-    );
+      `📝 What's the recipient's full name?`;
+    await sendWhatsAppMessage(from, message);
+    addToConversationHistory(session, 'bot', message);
   } else {
-    await sendWhatsAppMessage(from,
-      '❌ Please choose a supported country:\n' +
+    const message = '❌ Please choose a supported country:\n' +
       '• Mexico\n' +
       '• Colombia\n' +
       '• Brazil\n' +
       '• United Kingdom\n' +
-      '• Europe'
-    );
+      '• Europe';
+    await sendWhatsAppMessage(from, message);
+    addToConversationHistory(session, 'bot', message);
   }
 }
 
@@ -658,11 +668,13 @@ async function handleCollectingRecipient(from: string, text: string, session: Us
           `ℹ️ Send them one at a time or all together.`;
 
       await sendWhatsAppMessage(from, message);
+      addToConversationHistory(session, 'bot', message);
     } else {
       const message = isSpanish
         ? '❌ Error: Moneda no soportada'
         : '❌ Error: Unsupported currency';
       await sendWhatsAppMessage(from, message);
+      addToConversationHistory(session, 'bot', message);
       session.step = 'idle';
     }
   } else {
@@ -670,6 +682,7 @@ async function handleCollectingRecipient(from: string, text: string, session: Us
       ? '❌ Por favor ingresa el nombre completo del destinatario (nombre y apellido)\n\nEjemplo: "Juan Pérez" o "María García"'
       : '❌ Please enter the recipient\'s full name (first and last name)\n\nExample: "John Smith" or "Jane Doe"';
     await sendWhatsAppMessage(from, message);
+    addToConversationHistory(session, 'bot', message);
   }
 }
 
@@ -677,6 +690,7 @@ async function handleCollectingBankDetails(from: string, text: string, session: 
   const requirements = getBankRequirements(session.currency!);
   if (!requirements) {
     await sendWhatsAppMessage(from, '❌ Error: Unsupported currency');
+    addToConversationHistory(session, 'bot', '❌ Error: Unsupported currency');
     session.step = 'idle';
     return;
   }
@@ -749,22 +763,22 @@ async function handleCollectingBankDetails(from: string, text: string, session: 
     const netAmount = session.amount! - parseFloat(fee);
     const recipientAmount = (netAmount * rate).toFixed(2);
 
-    await sendWhatsAppMessage(from,
-      `✅ *Ready to Send!*\n\n` +
+    const confirmationMessage = `✅ *Ready to Send!*\n\n` +
       `💰 You send: $${session.amount} USD\n` +
       `💵 Fee: ~$${fee} USD\n` +
       `💱 Rate: ${rate} ${session.currency}/USD\n` +
       `📩 ${session.recipientName} receives: ~${recipientAmount} ${session.currency}\n` +
       `🌎 Country: ${session.country}\n\n` +
       `⏱️ Delivery: ${Object.values(TRANSFER_CORRIDORS).find((c: any) => c.country === session.country)?.deliveryTime}\n\n` +
-      `Type *"CONFIRM"* to send, or "cancel" to stop.`
-    );
+      `Type *"CONFIRM"* to send, or "cancel" to stop.`;
+    await sendWhatsAppMessage(from, confirmationMessage);
+    addToConversationHistory(session, 'bot', confirmationMessage);
   } else {
     const missingText = validation.missingFields.map(f => `• ${f}`).join('\n');
-    await sendWhatsAppMessage(from,
-      `❌ Still need:\n\n${missingText}\n\n` +
-      `Please provide the missing information.`
-    );
+    const missingFieldsMessage = `❌ Still need:\n\n${missingText}\n\n` +
+      `Please provide the missing information.`;
+    await sendWhatsAppMessage(from, missingFieldsMessage);
+    addToConversationHistory(session, 'bot', missingFieldsMessage);
   }
 }
 
@@ -773,8 +787,9 @@ async function handleConfirmation(from: string, text: string, session: UserSessi
 
   if (lowerText.includes('confirm') || lowerText.includes('yes') || lowerText.includes('send')) {
     await sendWhatsAppMessage(from, '⏳ Processing your transfer...');
+    addToConversationHistory(session, 'bot', '⏳ Processing your transfer...');
 
-    try {
+    try{
       // Process transfer
       const useRealAPI = MODE === 'PRODUCTION' && WISE_API_KEY;
 
@@ -866,8 +881,7 @@ async function handleConfirmation(from: string, text: string, session: UserSessi
           ...extraFields
         });
 
-        await sendWhatsAppMessage(from,
-          `✅ *Transfer Created!*\n\n` +
+        const successMessage = `✅ *Transfer Created!*\n\n` +
           `💰 Sent: $${result.amount} USD\n` +
           `📩 Receives: ${result.targetAmount?.toFixed(2) || 'Processing'} ${session.currency}\n` +
           `💱 Rate: ${result.rate?.toFixed(4) || 'N/A'}\n` +
@@ -876,8 +890,9 @@ async function handleConfirmation(from: string, text: string, session: UserSessi
           `📊 Status: ${result.status}\n\n` +
           `✨ Transfer created successfully via Wise API!\n` +
           `${result.status === 'incoming_payment_waiting' ? '⏳ Awaiting funding (sandbox limitation)\n' : ''}` +
-          `Say "hello" to send another transfer!`
-        );
+          `Say "hello" to send another transfer!`;
+        await sendWhatsAppMessage(from, successMessage);
+        addToConversationHistory(session, 'bot', successMessage);
       } else {
         // Demo mode
         const rate = EXCHANGE_RATES[session.currency!];
@@ -885,16 +900,16 @@ async function handleConfirmation(from: string, text: string, session: UserSessi
         const netAmount = session.amount! - fee;
         const recipientAmount = netAmount * rate;
 
-        await sendWhatsAppMessage(from,
-          `✅ *Transfer Demo*\n\n` +
+        const demoMessage = `✅ *Transfer Demo*\n\n` +
           `💰 Sent: $${session.amount} USD\n` +
           `📩 Receives: ~${recipientAmount.toFixed(2)} ${session.currency}\n` +
           `💱 Rate: ~${rate}\n` +
           `💵 Fee: ~$${fee.toFixed(2)}\n\n` +
           `🎭 This is a DEMO. No real money sent.\n` +
           `Set MODE=PRODUCTION in .env for real transfers.\n\n` +
-          `Say "hello" to try another transfer!`
-        );
+          `Say "hello" to try another transfer!`;
+        await sendWhatsAppMessage(from, demoMessage);
+        addToConversationHistory(session, 'bot', demoMessage);
       }
 
       // Reset session
@@ -907,18 +922,18 @@ async function handleConfirmation(from: string, text: string, session: UserSessi
 
     } catch (error: any) {
       console.error('Transfer error:', error);
-      await sendWhatsAppMessage(from,
-        `❌ *Transfer Failed*\n\n` +
+      const errorMessage = `❌ *Transfer Failed*\n\n` +
         `Error: ${error.message}\n\n` +
-        `Please try again or contact support.`
-      );
+        `Please try again or contact support.`;
+      await sendWhatsAppMessage(from, errorMessage);
+      addToConversationHistory(session, 'bot', errorMessage);
       session.step = 'idle';
     }
   } else {
-    await sendWhatsAppMessage(from,
-      `Type *"CONFIRM"* to proceed with the transfer,\n` +
-      `or "cancel" to stop.`
-    );
+    const invalidMessage = `Type *"CONFIRM"* to proceed with the transfer,\n` +
+      `or "cancel" to stop.`;
+    await sendWhatsAppMessage(from, invalidMessage);
+    addToConversationHistory(session, 'bot', invalidMessage);
   }
 }
 
