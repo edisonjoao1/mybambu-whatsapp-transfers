@@ -181,7 +181,15 @@ To start: "Send $100 to Mexico"`;
       } else if (Array.isArray(content) && content.length > 0) {
         // Handle array of content blocks
         const textContent = content.find((c: any) => c.type === 'text');
-        aiResponse = textContent?.text || String(content[0]);
+        if (textContent && typeof textContent.text === 'string') {
+          aiResponse = textContent.text;
+        } else if (textContent) {
+          // Ensure we convert the entire object to string if text property is not a string
+          aiResponse = String(textContent.text || textContent);
+        } else {
+          // Fallback: convert first content item to string
+          aiResponse = typeof content[0] === 'string' ? content[0] : String(content[0]);
+        }
       } else {
         aiResponse = String(content);
       }

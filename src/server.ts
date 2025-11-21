@@ -397,7 +397,7 @@ async function handleIdleState(from: string, text: string, session: UserSession)
   const isSpanish = session.language === 'es';
 
   // Greeting
-  if (lowerText.includes('hello') || lowerText.includes('hi') || lowerText.includes('hey') ||
+  if (lowerText.includes('hello') || lowerText.match(/\bhi\b/) || lowerText.includes('hey') ||
       lowerText.includes('hola') || lowerText.includes('buenos') || lowerText.includes('buenas')) {
     const message = isSpanish
       ? '👋 *¡Hola! Bienvenido a MyBambu*\n\n' +
@@ -462,7 +462,7 @@ async function handleIdleState(from: string, text: string, session: UserSession)
 
   // Send money intent (English and Spanish)
   if (lowerText.includes('send') || lowerText.includes('enviar') ||
-      lowerText.includes('transferir') || lowerText.includes('mandar')) {
+      lowerText.includes('transfer') || lowerText.includes('transferir') || lowerText.includes('mandar')) {
     const amount = extractAmount(text);
     const country = extractCountry(text);
 
